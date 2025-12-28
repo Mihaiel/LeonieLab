@@ -28,6 +28,12 @@ header{
     font-weight: var(--fw-semibold);
 }
 
+nav{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .nav-list{
     list-style-type: none;
 }

@@ -1,17 +1,12 @@
 /* 1. _______________ STARTPAGE _______________ */
 #main-content .intro{
-    display: flex;
-    align-items: start;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: var(--space-xl);
 }
 
-.intro > div,
-.intro > img {
-    flex: 1;
-}
-
 .intro img {
-    max-width: 40%;
+    max-width: 90%;
 }
 
 #main-content .intro p{
@@ -20,13 +15,57 @@
 
 .intro-buttons{
     display: flex;
-    gap: 1rem;
+    gap: var(--space-m);
 }
 
 .features{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-m);
     flex-wrap: wrap;
+}
+
+/* 2. _______________ ABOUT US _______________ */
+
+.about-us-images {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-l);
+}
+
+.about-us-images img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.about-us-image{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  #main-content .intro{
+    grid-template-columns: 1fr;
+  }
+
+  .intro img{
+    width: 100%;
+    margin: 0 auto;
+  }
+  .about-us-images {
+    grid-template-columns: 1fr;
+  }
+
+  .features{
+    grid-template-columns: 1fr;
+  }
+
+  .intro-buttons{
+    justify-content: center;
+  }
 }
