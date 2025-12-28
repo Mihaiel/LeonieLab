@@ -1,0 +1,208 @@
+:root {
+    --font-sans: 'Inter', system-ui, sans-serif;
+    /* base text and headings */
+    --fs-h1: 3rem;          /* 48px */
+    --fs-h2: 2.25rem;       /* 36px */
+    --fs-h3: 1.5rem;        /* 24px */
+    --fs-h4: 1.25rem;       /* 20px */
+
+    --fs-body: 1rem;        /* 16px */
+
+    --fs-small: 0.875rem;   /* 14px */
+    --fs-xs: 0.75rem;       /* 12px */
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+
+
+    /* margins*/
+    --space-xxs: .25rem;
+    --space-xs: .5rem;
+    --space-s: .75rem;
+    --space-m: 1rem;
+    --space-l: 1.25rem;
+    --space-xl: 1.5rem;
+    --space-xxl: 2.5rem;
+
+    /* line height */
+    --lh-body: 1.5;
+    --lh-heading: 1.2;  
+
+    /* colors */
+    --color-primary: #51ABEC;
+    --color-primary-rgb: 81, 171, 236;
+    --color-primary-bg-20: rgba(var(--color-primary-rgb), 0.2);
+    --color-primary-hover: #3f97d3;
+
+    --color-green: #00A12B;
+    --color-green-rgb: 0, 161, 43;
+    --color-green-bg-20: rgba(var(--color-green-rgb), 0.2);
+
+    --color-purple: #D15EFF;
+    --color-purple-rgb: 209, 94, 255;
+    --color-purple-bg-20: rgba(var(--color-purple-rgb), 0.2);
+
+    --color-text: #464646;
+    --color-text-muted: #8C8C8C;
+    --color-border: #D9D9D9;
+    --color-bg: #ffffff;
+
+    --border-primary: 1px solid var(--color-border);
+    --border-big: 2px solid var(--color-border);
+}
+
+section{
+    margin: 8rem 0 8rem 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--color-text);
+    background-color: var(--color-bg);
+}
+
+h1, h2, h3, h4 {
+    font-family: var(--font-sans);
+    line-height: var(--lh-heading);
+    font-weight: var(--fw-semibold);
+    margin-bottom: var(--space-s);
+}
+
+h1 {
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-h1); 
+}
+
+h2 {
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-h2); 
+}
+
+h3 { 
+    font-size: var(--fs-h3); 
+}
+
+h4 { 
+    font-size: var(--fs-h4); 
+}
+
+p {
+    margin-bottom: var(--space-m);
+}
+
+a {
+    color: var(--color-primary);
+    font-weight: var(--fw-medium);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+small, .text-muted {
+    color: var(--color-text-muted);
+}
+
+strong{
+    font-weight: var(--fw-semibold);
+}
+
+.medium{
+    font-weight: var(--fw-medium);
+}
+
+.bold{
+    font-weight: var(--fw-bold);
+}
+
+.container {
+    max-width: 1100px;
+    padding-left: var(--space-m);
+    padding-right: var(--space-m);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.color-primary{
+    color: var(--color-primary);
+}
+
+button{
+    transition: 0.2s;
+    font-size: var(--fs-body);
+    background-color: var(--color-primary);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--color-bg);
+    font-weight: var(--fw-semibold);
+    border: none;
+    cursor: pointer;
+}
+
+button:hover{
+    transition: 0.2s;
+    background-color: var(--color-primary-hover);
+    text-decoration: none;
+    transform: scale(1.05);
+}
+
+button:active:hover{
+    transform: scale(0.95);
+}
+
+.box-container{
+    border-radius: 8px;
+    border: var(--border-primary);
+    min-width: 300px;
+    min-height: 250px;
+    max-width: 300px;
+    max-height: 300px;
+    padding: 1rem;
+}
+
+.box-container h3{
+    margin-top: 1rem;
+}
+
+.box-container svg{
+    background-color: var(--color-primary-bg-20);
+    border-radius: 4px;
+    padding: 8px;
+}
+
+/* ========= MEDIA QUERIES ========= */
+
+/* Extra small devices (phones) */
+@media (max-width: 480px) {}
+
+/* Small devices (large phones) */
+@media (max-width: 640px) {}
+
+/* Tablets */
+@media (max-width: 768px) {}
+
+/* Small laptops */
+@media (max-width: 1024px) {
+    .container {
+        max-width: 900px;
+  }
+}
+
+/* Desktops */
+@media (max-width: 1280px) {}
+
+/* Large screens */
+@media (min-width: 1440px) {
+    .container {
+        max-width: 1200px;
+  }
+}

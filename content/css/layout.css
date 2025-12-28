@@ -1,0 +1,55 @@
+/* 1. _______________ HEADER _______________ */
+header{
+    padding-bottom: 1rem;
+    border-bottom: var(--border-big);
+    margin-bottom: 2rem;
+}
+
+.header-inner{
+    display: flex;
+    justify-content: space-between;
+}
+
+.header .header-inner .logo{
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.logo:hover .logo-text{
+    transition: 0.2s all;
+    transform: scale(1.05);
+}
+
+.logo-text{
+    transition: 0.2s all;
+    font-size: var(--fs-h3);
+    color: var(--color-text);
+    font-weight: var(--fw-semibold);
+}
+
+.nav-list{
+    list-style-type: none;
+}
+
+/* 2. _______________ FOOTER _______________ */
+
+footer{
+    border-top: var(--border-big);
+    margin-top: 2rem;
+}
+
+.footer-inner{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-nav{
+    display: flex;
+    gap: 4rem;
+}
+
+.footer-nav a{
+    color: var(--color-text);
+}

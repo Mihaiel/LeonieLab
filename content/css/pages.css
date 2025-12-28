@@ -1,0 +1,32 @@
+/* 1. _______________ STARTPAGE _______________ */
+#main-content .intro{
+    display: flex;
+    align-items: start;
+    gap: var(--space-xl);
+}
+
+.intro > div,
+.intro > img {
+    flex: 1;
+}
+
+.intro img {
+    max-width: 40%;
+}
+
+#main-content .intro p{
+    font-size: var(--fs-h3);
+}
+
+.intro-buttons{
+    display: flex;
+    gap: 1rem;
+}
+
+.features{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}

@@ -1,0 +1,16 @@
+.button-white{
+    background-color: var(--color-bg);
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+}
+
+.button-white:hover{
+    background-color: var(--color-bg);
+}
+
+.button-github{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+}
