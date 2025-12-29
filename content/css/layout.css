@@ -10,7 +10,7 @@ header{
     justify-content: space-between;
 }
 
-.header .header-inner .logo{
+.logo{
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -58,4 +58,28 @@ footer{
 
 .footer-nav a{
     color: var(--color-text);
+}
+
+/* 2. _______________ HEADER WORKSHEET _______________ */
+
+.header-worksheet .header-inner{
+    display: grid;
+    grid-template-columns: 1fr 12fr;
+}
+
+.header-worksheet nav{
+    width: 100%;
+}
+
+.header-worksheet nav .nav-list{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.header-worksheet nav .nav-list .left-side{
+    display: flex;
+    justify-content: start;
+    gap: var(--space-s);
 }

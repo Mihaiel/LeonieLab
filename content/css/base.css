@@ -49,6 +49,9 @@
     --color-border: #D9D9D9;
     --color-bg: #ffffff;
 
+    --color-red: #ff3333;
+    --color-red-hover: #e62e2e;
+
     --border-primary: 1px solid var(--color-border);
     --border-big: 2px solid var(--color-border);
 }
@@ -148,6 +151,10 @@ button, .button{
     font-weight: var(--fw-semibold);
     border: none;
     cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-xs)
 }
 
 button:hover, .button:hover{
@@ -162,10 +169,16 @@ button:active:hover, .button:active:hover{
 }
 
 .box-container{
+    transition: 0.2s;
     border-radius: 8px;
     border: var(--border-primary);
-
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px;
     padding: 1rem;
+}
+
+.box-container:hover{
+    transition: 0.2s;
+    transform: scale(1.02);
 }
 
 .box-container h3{
@@ -184,10 +197,15 @@ button:active:hover, .button:active:hover{
 @media (max-width: 480px) {}
 
 /* Small devices (large phones) */
-@media (max-width: 640px) {}
+@media (max-width: 640px) {
+}
 
 /* Tablets */
-@media (max-width: 768px) {}
+@media (max-width: 768px) {
+    section{
+        margin-top: var(--space-l);
+    }
+}
 
 /* Small laptops */
 @media (max-width: 1024px) {
