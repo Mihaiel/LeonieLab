@@ -1,3 +1,11 @@
+/*
+  GridRenderer
+  -----------------
+  Tiny view layer that turns a Document's 2D grid into DOM nodes.
+  This takes care of the grid rendering.
+  To modify the 2D grid properties (rows, columns), go to the document data model (/models/Document.js).
+*/
+
 // Renders the grid as a simple set of fixed-size cells
 export class GridRenderer {
   constructor(root, doc) {
@@ -7,7 +15,7 @@ export class GridRenderer {
   }
 
   mount() {
-    // create a grid
+    // (Re)create a grid element and fill it with cells
     this.root.innerHTML = '';
     const grid = document.createElement('div');
     grid.className = 'worksheet-grid';
@@ -17,7 +25,7 @@ export class GridRenderer {
     grid.style.userSelect = 'none';
     grid.style.setProperty('--cols', this.doc.cols);
 
-    // add cells
+    // Create one div per cell and show the current character
     for (let r = 0; r < this.doc.rows; r++) {
       for (let c = 0; c < this.doc.cols; c++) {
         const cell = document.createElement('div');
@@ -34,7 +42,7 @@ export class GridRenderer {
     this.root.appendChild(grid);
     this.gridEl = grid;
   }
-
+  // Refresh all cells (useful after loading a file)
   renderAll() {
     if (!this.gridEl) return;
     const cells = Array.from(this.gridEl.children);
@@ -47,6 +55,7 @@ export class GridRenderer {
     }
   }
 
+  // Refresh a single cell (fast path when typing)
   updateCell(r, c) {
     if (!this.gridEl) return;
     const idx = r * this.doc.cols + c;
@@ -54,6 +63,7 @@ export class GridRenderer {
     if (el) el.textContent = this.doc.getCell(r, c)?.char || '';
   }
 
+  // Visually mark the active cell so the user knows where they are
   updateCursor(r, c) {
     if (!this.gridEl) return;
     Array.from(this.gridEl.children).forEach(el => el.classList.remove('is-cursor'));
@@ -62,6 +72,7 @@ export class GridRenderer {
     if (el) el.classList.add('is-cursor');
   }
 
+  // Erase the document contents and repaint
   clear() {
     this.doc.clearAll();
     this.renderAll();

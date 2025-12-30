@@ -84,9 +84,11 @@ function setupWorksheet(){
     });
   }
 
-  // Keyboard input (prevent auto-repeat flood)
+  // Keyboard input
   document.addEventListener('keydown', (e) => {
-    if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    // Allow auto-repeat only for Backspace (so user can hold to erase)
+    if (e.repeat && e.key !== 'Backspace') return;
     if (logic.handleKey(e.key)) e.preventDefault();
   });
 }

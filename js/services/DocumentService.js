@@ -1,3 +1,13 @@
+/*
+  DocumentService
+  ----------------
+  Super small helper that serializes the Document to text and
+  restores it back. We use JSON for simplicity and portability.
+
+  The output is a plain .txt file so it’s easy to share via email
+  or store on disk without special tooling.
+*/
+
 // Exports/imports the grid as plain JSON text
 export class DocumentService {
   exportToText(doc){

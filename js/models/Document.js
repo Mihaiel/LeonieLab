@@ -1,3 +1,10 @@
+/*
+  Document (data model)
+  ---------------------
+  A tiny 2D grid of cells. Each cell stores just one character
+  (string) so the app can render numbers in a neat worksheet.
+*/
+
 // Very simple document model for a fixed grid
 export class Document {
   constructor(rows = 30, cols = 24) {

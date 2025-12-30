@@ -1,66 +1,110 @@
-// Minimal logic: type digits, move cursor; Backspace and arrows
+/*
+  Application Logic
+  ---------------------
+  Very simple logic for typing into a grid
+  Arrow keys move the cursor
+  Backspace clears current (or previous) cell
+*/
+
+// OPERATION STUB HOOK left below for later features
 export class ApplicationLogic {
-  constructor(doc, grid){
-    this.doc = doc;
-    this.grid = grid;
-    this.cursor = { row: 0, col: 0 };
+  constructor(doc, grid) {
+    this.doc = doc;   // the data model (rows, cols, grid)
+    this.grid = grid; // the renderer (updates UI)
+    this.row = 0;     // current row
+    this.col = 0;     // current col
   }
 
-  init(){
-    this.setCursor(0,0);
+  // Set starting position (top-left)
+  init() {
+    this.setCursor(0, 0);
   }
 
-  setCursor(r,c){
-    const row = Math.max(0, Math.min(this.doc.rows - 1, r));
-    const col = Math.max(0, Math.min(this.doc.cols - 1, c));
-    this.cursor = { row, col };
-    this.grid?.updateCursor?.(row, col);
+  // Keep cursor inside grid and update the highlight
+  setCursor(r, c) {
+    if (r < 0) r = 0;
+    if (c < 0) c = 0;
+    if (r >= this.doc.rows) r = this.doc.rows - 1;
+    if (c >= this.doc.cols) c = this.doc.cols - 1;
+    this.row = r;
+    this.col = c;
+    if (this.grid && this.grid.updateCursor) {
+      this.grid.updateCursor(r, c);
+    }
   }
 
-  handleKey(key){
-    // numbers 0-9
-    if (/^[0-9]$/.test(key)) { this.typeDigit(key); return true; }
-    // backspace
-    if (key === 'Backspace') { this.backspace(); return true; }
-    // arrows
-    if (key === 'ArrowLeft') { this.move(0,-1); return true; }
-    if (key === 'ArrowRight') { this.move(0,1); return true; }
-    if (key === 'ArrowUp') { this.move(-1,0); return true; }
-    if (key === 'ArrowDown') { this.move(1,0); return true; }
+  // Handle a single key (called from main.js)
+  handleKey(key) {
+    // 0-9 digits
+    if (key >= '0' && key <= '9') {
+      this.writeDigit(key);
+      return true;
+    }
 
-    // OPERATION STUB HOOK: '+', '-', 'x', '/', 'Enter' can be handled later
-    return false;
+    // basic navigation + edit
+    switch (key) {
+      case 'Backspace': this.erase(); return true;
+      case 'ArrowLeft': this.moveLeft(); return true;
+      case 'ArrowRight': this.moveRight(); return true;
+      case 'ArrowUp': this.moveUp(); return true;
+      case 'ArrowDown': this.moveDown(); return true;
+    }
+
+    // OPERATION STUB HOOK:
+    // if (key === '+' || key === '-' || key === 'x' || key === '/' || key === 'Enter') {
+    //   // later: detect and format operations here
+    //   return true;
+    // }
+
+    return false; // unhandled key
   }
 
-  typeDigit(ch){
-    const { row, col } = this.cursor;
-    this.doc.setCell(row, col, ch);
-    this.grid?.updateCell?.(row, col);
-    this.advance();
+  // Put a digit into current cell and go to next cell
+  writeDigit(ch) {
+    this.doc.setCell(this.row, this.col, ch);
+    if (this.grid && this.grid.updateCell) {
+      this.grid.updateCell(this.row, this.col);
+    }
+    this.nextCell();
   }
 
-  backspace(){
-    let { row, col } = this.cursor;
-    const cell = this.doc.getCell(row, col);
+  // Clear current (if non-empty) or previous cell and move cursor accordingly
+  erase() {
+    const cell = this.doc.getCell(this.row, this.col);
     if (cell && cell.char) {
-      this.doc.setCell(row, col, '');
-      this.grid?.updateCell?.(row, col);
+      this.doc.setCell(this.row, this.col, '');
+      if (this.grid && this.grid.updateCell) this.grid.updateCell(this.row, this.col);
       return;
     }
-    if (col > 0) col -= 1; else if (row > 0) { row -= 1; col = this.doc.cols - 1; } else return;
-    this.doc.setCell(row, col, '');
-    this.grid?.updateCell?.(row, col);
-    this.setCursor(row, col);
+    // move back one cell and clear there
+    if (this.col > 0) {
+      this.col -= 1;
+    } else if (this.row > 0) {
+      this.row -= 1;
+      this.col = this.doc.cols - 1;
+    } else {
+      // already at top-left
+      return;
+    }
+    this.doc.setCell(this.row, this.col, '');
+    if (this.grid && this.grid.updateCell) this.grid.updateCell(this.row, this.col);
+    this.setCursor(this.row, this.col);
   }
 
-  move(dr, dc){
-    this.setCursor(this.cursor.row + dr, this.cursor.col + dc);
-  }
+  // Move helpers
+  moveLeft()  { this.setCursor(this.row, this.col - 1); }
+  moveRight() { this.setCursor(this.row, this.col + 1); }
+  moveUp()    { this.setCursor(this.row - 1, this.col); }
+  moveDown()  { this.setCursor(this.row + 1, this.col); }
 
-  advance(){
-    let { row, col } = this.cursor;
-    col += 1;
-    if (col >= this.doc.cols){ col = 0; row = Math.min(this.doc.rows - 1, row + 1); }
-    this.setCursor(row, col);
+  // After typing, advance right, wrapping to next row at the end
+  nextCell() {
+    let r = this.row;
+    let c = this.col + 1;
+    if (c >= this.doc.cols) {
+      c = 0;
+      if (r < this.doc.rows - 1) r += 1; // stay on last row if no more rows
+    }
+    this.setCursor(r, c);
   }
 }
