@@ -69,3 +69,46 @@
     justify-content: center;
   }
 }
+/* 3. _______________ WORKSHEET GRID (basic) _______________ */
+#worksheet-root{
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0 2rem;
+}
+
+.worksheet-cell{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: transparent;
+  font-size: var(--fs-h2);
+}
+
+.worksheet-cell.is-cursor{
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+@media print{
+    /* margin can be overridden via CSS var if set by PDFExporter */
+  @page{ size: A4 portrait; margin: var(--print-margin-mm, 10mm); }
+  header, footer, nav, .button, button{ display: none !important; }
+  /* Keep the selected cell visible on print; just remove its outline */
+  .is-cursor{ outline: none !important; }
+    /* remove layout constraints so grid can use full printable width */
+    body.container, .container{ max-width: none !important; padding: 0 !important; margin: 0 !important; }
+    #main-content, #worksheet-root{ width: 100% !important; margin: 0 !important; padding: 0 !important; justify-content: flex-start; }
+    .worksheet-grid{
+        width: calc(var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm));
+        grid-template-columns: repeat(var(--cols), 1fr) !important;
+        grid-auto-rows: calc((var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm)) / var(--cols)) !important;
+    }
+  .worksheet-cell{
+    border: none;
+    width: auto !important;
+    height: auto !important;
+    font-size: calc((var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm)) / var(--cols) * 0.5) !important;
+    line-height: 1 !important;
+  }
+}
