@@ -44,10 +44,10 @@ export class PDFExporter {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
     }
     // draw characters centered in cells
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = '#464646';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = '28px sans-serif';
+    ctx.font = '40px sans-serif';
     for (let r = 0; r < doc.rows; r++){
       for (let c = 0; c < doc.cols; c++){
         const ch = doc.getCell(r, c)?.char || '';
@@ -159,16 +159,19 @@ export class PDFExporter {
     const content = [
       'q',
       'BT',
+      '0.2745 0.2745 0.2745 rg',
       '/F1 16 Tf',
       `1 0 0 1 ${left} ${line1Y} Tm`,
       `(${l1}) Tj`,
       'ET',
       'BT',
+      '0.2745 0.2745 0.2745 rg',
       '/F2 12 Tf',
       `1 0 0 1 ${left} ${line2Y} Tm`,
       `(${l2}) Tj`,
       'ET',
       'BT',
+      '0.2745 0.2745 0.2745 rg',
       '/F2 12 Tf',
       `1 0 0 1 ${left} ${line3Y} Tm`,
       `(${l3}) Tj`,

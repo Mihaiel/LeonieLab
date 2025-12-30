@@ -1,5 +1,4 @@
 // Very simple document model for a fixed grid
-// Student-like: keep it small and commented
 export class Document {
   constructor(rows = 30, cols = 24) {
     this.rows = rows;

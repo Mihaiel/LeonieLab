@@ -84,14 +84,33 @@
   font-size: var(--fs-h2);
 }
 
+.worksheet-grid{
+  border: 4px solid var(--color-text);
+}
+
+/* Make the outside border of the whole grid darker, like a document frame */
+
+
 .worksheet-cell.is-cursor{
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;
   z-index: 1;
 }
 
+.worksheet-cell.is-cursor{
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  z-index: 1;
+  animation: cursor-idle 1s linear infinite;
+}
+
+@keyframes cursor-idle {
+  0% {outline: 2px solid var(--color-primary); outline-offset: -2px; }
+  50% {outline: 4px solid var(--color-primary); outline-offset: 0px; }
+}
+
 @media print{
-    /* margin can be overridden via CSS var if set by PDFExporter */
+  /* margin can be overridden via CSS var if set by PDFExporter */
   @page{ size: A4 portrait; margin: var(--print-margin-mm, 10mm); }
   header, footer, nav, .button, button{ display: none !important; }
   /* Keep the selected cell visible on print; just remove its outline */
@@ -108,7 +127,7 @@
     border: none;
     width: auto !important;
     height: auto !important;
-    font-size: calc((var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm)) / var(--cols) * 0.5) !important;
+    font-size: calc((var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm)) / var(--cols) * 0.8) !important;
     line-height: 1 !important;
   }
 }
