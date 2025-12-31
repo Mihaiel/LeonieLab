@@ -10,6 +10,10 @@ header{
     justify-content: space-between;
 }
 
+.header-inner a{
+    text-decoration: none;
+}
+
 .logo{
     display: flex;
     align-items: center;
@@ -17,6 +21,18 @@ header{
 }
 
 .logo:hover .logo-text{
+    text-decoration: none;
+    transition: 0.2s all;
+    transform: scale(1.05);
+}
+
+.logo svg{
+    border-radius: 8px;
+    border: 1px solid var(--color-text);
+    transition: 0.2s all;
+}
+
+.logo:hover svg{
     transition: 0.2s all;
     transform: scale(1.05);
 }
