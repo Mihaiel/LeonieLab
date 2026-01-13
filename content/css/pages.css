@@ -131,3 +131,10 @@
     line-height: 1 !important;
   }
 }
+
+/* Operation visuals (needed for + formatting and results) */
+.worksheet-cell.underline{ border-bottom: 1px solid #000 !important; }
+.worksheet-cell.result{ color: var(--color-primary); }
+.worksheet-cell.result-correct{ color: var(--color-primary); }
+.worksheet-cell.result-wrong{ color: var(--color-red); }
+.worksheet-cell.box-selected{ background: var(--color-primary-bg-20); }
