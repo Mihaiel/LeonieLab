@@ -1,9 +1,13 @@
 import { AddOperation } from '../operations/AddOperation.js';
+import { DivOperation } from '../operations/DivOperation.js';
 
 export class OperationManager {
   constructor() {
     this.active = null; // { op: '+', row, anchorCol }
-    this.registry = { '+': new AddOperation() };
+    this.registry = { 
+      '+': new AddOperation(),
+      '/': new DivOperation(),
+      ':': new DivOperation() };
     this.resultRanges = [];
   }
 
@@ -133,4 +137,3 @@ export class OperationManager {
     });
   }
 }
-

@@ -60,7 +60,34 @@ export class ApplicationLogic {
           return true;
         }
       }
-      this.typeDigit(key);
+
+      // Check for division jump BEFORE typing
+      const currentRow = this.cursor.row;
+      const currentCol = this.cursor.col;
+      let jumpTarget = null;
+      
+      if (this.opManager && this.opManager.registry['/']?.handleCharacterTyped) {
+        jumpTarget = this.opManager.registry['/'].handleCharacterTyped(
+          this.doc, 
+          currentRow,
+          currentCol,
+          this.opManager
+        );
+      }
+      
+      // If we have a jump target, write digit WITHOUT moving cursor automatically
+      if (jumpTarget) {
+        // Write digit at current position
+        this.doc.setCell(currentRow, currentCol, key);
+        if (this.grid && this.grid.updateCell) {
+          this.grid.updateCell(currentRow, currentCol);
+        }
+        // Jump to the target position
+        this.setCursor(jumpTarget.cursorRow, jumpTarget.cursorCol);
+      } else {
+        // Normal behavior: write and move to next cell
+        this.typeDigit(key);
+      }       
       return true;
     }
 
@@ -117,6 +144,16 @@ export class ApplicationLogic {
       this.nextCell();
       return true;
     }
+
+    // Operator '/' or ':' begins a division operation at the current cursor
+    if ((key === '/' || key === ':') && this.opManager) {
+      const { row, col } = this.cursor;
+      this.opManager.begin(key, row, col);
+      this.doc.setCell(row, col, key);
+      this.grid?.updateCell?.(row, col);
+      this.nextCell();
+      return true;
+}
 
     // Enter formats the active operation (if any)
     if (key === 'Enter' && this.opManager) {
