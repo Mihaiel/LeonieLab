@@ -1,17 +1,9 @@
 import { AddOperation } from '../operations/AddOperation.js';
-import { MulOperation } from '../operations/MulOperation.js';
-import { SubOperation } from '../operations/SubOperation.js';
 
 export class OperationManager {
   constructor() {
     this.active = null; // { op: '+', row, anchorCol }
-    this.registry = { 
-      '+': new AddOperation(),
-      '*': new MulOperation(),
-      'x': new MulOperation(),
-      'X': new MulOperation(),
-      '-': new SubOperation(),
-    };
+    this.registry = { '+': new AddOperation() };
     this.resultRanges = [];
   }
 
@@ -179,4 +171,3 @@ export class OperationManager {
     });
   }
 }
-
