@@ -91,6 +91,13 @@ export class ApplicationLogic {
             }
             // Remove underline from Row2
             this.grid?.removeUnderline?.(bRow, startCol, endCol);
+            // remove underline #2 if present (multiplication)
+            if (box.boxRange?.underline2Row != null) {
+              const u2r = box.boxRange.underline2Row;
+              const u2s = box.boxRange.underline2Start ?? startCol;
+              const u2e = box.boxRange.underline2End ?? endCol;
+              this.grid?.removeUnderline?.(u2r, u2s, u2e);
+            } 
             // Remove from manager list using box identity
             if (this.opManager?.removeRangeByBox) {
               this.opManager.removeRangeByBox(box.boxRange);
@@ -108,6 +115,16 @@ export class ApplicationLogic {
       case 'ArrowDown': this.moveDown(); return true;
     }
 
+    // Operator '-' begins a subtraction operation at the current cursor  
+    if (key === '-' && this.opManager) {
+      const { row, col } = this.cursor;
+      this.opManager.begin('-', row, col);
+      this.doc.setCell(row, col, '-');
+      this.grid?.updateCell?.(row, col);
+      this.nextCell();
+      return true;
+    }
+
     // Operator '+' begins an addition operation at the current cursor
     if (key === '+' && this.opManager) {
       const { row, col } = this.cursor;
@@ -118,17 +135,75 @@ export class ApplicationLogic {
       return true;
     }
 
+    // Operator '*' begins a multiplication operation at the current cursor
+    if ((key === '*' || key === 'x' || key === 'X') && this.opManager) {
+      const { row, col } = this.cursor;
+      this.opManager.begin(key, row, col);     // begin with the typed key
+      this.doc.setCell(row, col, key);         // store it so parseAround() can find it
+      this.grid?.updateCell?.(row, col);
+      this.nextCell();
+      return true;
+    }
+
+  // Enter in result mode: always move one row down under the LAST digit of B
+  if (key === 'Enter' && this.opManager && this.opManager.active && this.opManager.active.op === 'result') {
+    const cur = this.opManager.active;
+
+    const sameBox = (a, b) =>
+      a && b &&
+      a.topRow === b.topRow &&
+      a.bRow === b.bRow &&
+      a.resRow === b.resRow &&
+      a.startCol === b.startCol &&
+      a.endCol === b.endCol;
+
+    const targetRow = cur.row + 1;
+
+    // Find range on the next row in the same multiplication task
+    const nextRange = (this.opManager.resultRanges || []).find(r =>
+      r.row === targetRow &&
+      r.boxRange && cur.boxRange &&
+      sameBox(r.boxRange, cur.boxRange)
+    );
+
+    if (nextRange) {
+      this.opManager.beginResultEntry(nextRange);
+
+      // CRITICAL PART:
+      // Always jump to the column of the LAST digit of B (right edge)
+      this.setCursor(nextRange.row, nextRange.endCol);
+    }
+    
+    return true;
+  }
+
+
+    
     // Enter formats the active operation (if any)
     if (key === 'Enter' && this.opManager) {
       const next = this.opManager.formatActive(this.doc, this.grid);
       if (next && next.resultRange) {
-        // Start result entry phase: move cursor to the last (rightmost) result cell
-        if (this.opManager.beginResultEntry) this.opManager.beginResultEntry(next.resultRange);
-        // Track this result range for later corrections
-        if (this.opManager.addResultRange) this.opManager.addResultRange({ ...next.resultRange, boxRange: next.boxRange });
-        this.setCursor(next.resultRange.row, next.resultRange.endCol);
-        return true;
+    // 1) store ALL ranges (partials + final)
+      if (this.opManager.addResultRange) {
+        this.opManager.addResultRange({ ...next.resultRange, boxRange: next.boxRange });
+
+      if (Array.isArray(next.extraResultRanges)) {
+        for (const r of next.extraResultRanges) {
+          this.opManager.addResultRange({ ...r, boxRange: next.boxRange });
+        }
       }
+    }
+
+    // 2) start result entry on first range
+      if (this.opManager.beginResultEntry) {
+        this.opManager.beginResultEntry({ ...next.resultRange, boxRange: next.boxRange });
+      }
+    // 3) cursor must start at entryCol (shifted), otherwise it looks wrong
+        this.setCursor(next.resultRange.row, next.resultRange.endCol);
+
+    return true;
+  }
+
       if (next && Number.isInteger(next.cursorRow) && Number.isInteger(next.cursorCol)) {
         this.setCursor(next.cursorRow, next.cursorCol);
       }

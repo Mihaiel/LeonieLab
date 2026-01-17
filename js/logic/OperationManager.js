@@ -1,9 +1,17 @@
 import { AddOperation } from '../operations/AddOperation.js';
+import { MulOperation } from '../operations/MulOperation.js';
+import { SubOperation } from '../operations/SubOperation.js';
 
 export class OperationManager {
   constructor() {
     this.active = null; // { op: '+', row, anchorCol }
-    this.registry = { '+': new AddOperation() };
+    this.registry = { 
+      '+': new AddOperation(),
+      '*': new MulOperation(),
+      'x': new MulOperation(),
+      'X': new MulOperation(),
+      '-': new SubOperation(),
+    };
     this.resultRanges = [];
   }
 
@@ -37,31 +45,63 @@ export class OperationManager {
   }
 
   beginResultEntry(range) {
-    this.active = { op: 'result', ...range, cursorCol: range.endCol };
+  const entry = (typeof range.entryCol === 'number') ? range.entryCol : range.endCol;
+  this.active = { op: 'result', ...range, cursorCol: entry };
   }
 
   handleResultDigit(doc, grid, digit) {
-    if (!this.active || this.active.op !== 'result') return false;
-    const { row, cursorCol, startCol, endCol, correctDigits, correctStartCol } = this.active;
-    if (cursorCol < startCol || cursorCol > endCol) return false;
-    this.clearResultClasses(grid, row, startCol, endCol);
-    doc.setCell(row, cursorCol, digit);
-    grid?.updateCell?.(row, cursorCol);
-    this.active.cursorCol = Math.max(startCol, cursorCol - 1);
-    if (this.isResultFilled(doc, row, startCol, endCol)) {
-      const typed = this.collectString(doc, row, startCol, endCol);
-      const expected = this.buildExpected(correctDigits, correctStartCol, startCol, endCol);
-      const ok = (typed === expected);
-      this.applyResultClass(grid, row, startCol, endCol, ok ? 'result-correct' : 'result-wrong');
-      if (ok) {
-        this.markRangeLocked(grid, row, startCol, endCol);
-        this.resultRanges = this.resultRanges.map(r => (r.row === row && r.startCol === startCol && r.endCol === endCol) ? { ...r, locked: true } : r);
-        this.active = null;
-        return true;
-      }
+  if (!this.active || this.active.op !== 'result') return false;
+
+  const { row, cursorCol, startCol, endCol, correctDigits, correctStartCol } = this.active;
+  if (cursorCol < startCol || cursorCol > endCol) return false;
+
+  // Always clear classes for the whole editable range (visual cleanup)
+  this.clearResultClasses(grid, row, startCol, endCol);
+
+  doc.setCell(row, cursorCol, digit);
+  grid?.updateCell?.(row, cursorCol);
+
+  // Move left (school-style typing)
+  this.active.cursorCol = Math.max(startCol, cursorCol - 1);
+
+  // For multiplication we only check the real digit zone (right side).
+  // For addition, checkStart/checkEnd are undefined -> fallback to full range.
+  const checkStart = (typeof this.active.checkStartCol === 'number') ? this.active.checkStartCol : startCol;
+  const checkEnd   = (typeof this.active.checkEndCol === 'number')   ? this.active.checkEndCol   : endCol;
+
+  // Only require the CHECK zone to be filled (do not wait for the full box)
+  if (this.isResultFilled(doc, row, checkStart, checkEnd)) {
+    const typed = this.collectString(doc, row, checkStart, checkEnd);
+    const expected = this.buildExpected(correctDigits, correctStartCol, checkStart, checkEnd);
+    const ok = (typed === expected);
+
+    const kind = this.active.kind; // 'partial' | 'final' | undefined
+
+    if (kind === 'partial') {
+      // Multiplication partial: never show red
+      if (ok) this.applyResultClass(grid, row, checkStart, checkEnd, 'result-correct');
+      else this.clearResultClasses(grid, row, checkStart, checkEnd);
+    } else {
+      // Default behavior (addition + multiplication final): blue if correct, red if wrong
+      this.applyResultClass(grid, row, checkStart, checkEnd, ok ? 'result-correct' : 'result-wrong');
     }
-    return true;
+
+    if (ok) {
+      // Lock only the CHECK zone (not the whole wide box)
+      this.markRangeLocked(grid, row, checkStart, checkEnd);
+
+      // Keep your existing locked bookkeeping
+      this.resultRanges = this.resultRanges.map(r =>
+        (r.row === row && r.startCol === startCol && r.endCol === endCol) ? { ...r, locked: true } : r
+      );
+
+      this.active = null;
+      return true;
+    }
   }
+  
+  return true;
+}
 
   handleResultBackspace(doc, grid) {
     if (!this.active || this.active.op !== 'result') return false;
@@ -112,13 +152,19 @@ export class OperationManager {
       if (!el) continue; el.classList.remove('result-correct', 'result-wrong'); el.classList.add(className);
     }
   }
+
   markRangeLocked(grid, row, startCol, endCol) {
     if (!grid?.gridEl) return;
     for (let c = startCol; c <= endCol; c++) {
-      const idx = row * (grid?.doc?.cols ?? 0) + c; const el = grid.gridEl.children[idx];
-      if (!el) continue; el.classList.add('result-correct'); el.dataset.locked = '1';
+      const idx = row * (grid?.doc?.cols ?? 0) + c;
+      const el = grid.gridEl.children[idx];
+      if (!el) continue;
+      el.classList.add('result-correct');
+      el.dataset.locked = '1';
     }
   }
+
+  
   isLockedCell(row, col) { return !!this.getLockedRangeAt(row, col); }
   getLockedRangeAt(row, col) {
     const r = this.resultRanges.find(r => r.locked && r.boxRange && (
