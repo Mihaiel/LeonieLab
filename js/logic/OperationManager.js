@@ -1,9 +1,20 @@
 import { AddOperation } from '../operations/AddOperation.js';
+import { MulOperation } from '../operations/MulOperation.js';
+import { SubOperation } from '../operations/SubOperation.js';
+import { DivOperation } from '../operations/DivOperation.js';
 
 export class OperationManager {
   constructor() {
     this.active = null; // { op: '+', row, anchorCol }
-    this.registry = { '+': new AddOperation() };
+    this.registry = { 
+      '+': new AddOperation(),
+      '*': new MulOperation(),
+      'x': new MulOperation(),
+      'X': new MulOperation(),
+      '/': new DivOperation(),
+      ':': new DivOperation(),
+      '-': new SubOperation(),
+    };
     this.resultRanges = [];
   }
 
