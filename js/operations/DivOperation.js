@@ -1,4 +1,11 @@
 export class DivOperation {
+  //reset division jumping state in OperationManager
+  resetState(opManager) {
+    if (opManager.divisionState) {
+      opManager.divisionState = {};
+    }
+  }
+  
   // Main formatting function called when Enter is pressed
   format(doc, grid, { row, anchorCol }, opManager) {
     const typedRow = row;

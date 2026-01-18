@@ -22,7 +22,13 @@ export class OperationManager {
     this.resultRanges = [];
   }
 
-  begin(op, row, anchorCol) { this.active = { op, row, anchorCol }; }
+  begin(op, row, anchorCol) { 
+    if((op === '/' || op === ':') && this.registry['/']) {
+      this.registry['/'].resetState?.(this);
+    }    
+    this.active = { op, row, anchorCol }; 
+  }
+  
   clearActive() { this.active = null; }
 
   formatActive(doc, grid) {
@@ -129,7 +135,13 @@ export class OperationManager {
     this.active.cursorCol = col;
   }
 
-  reset() { this.active = null; this.resultRanges = []; }
+  reset() { this.active = null; 
+            this.resultRanges = [];
+            //reset division state in DivOperation
+            if (this.registry['/']) {
+              this.registry['/'].resetState?.(this);
+            }
+          }
 
   // helpers
   clearResultClasses(grid, row, startCol, endCol) {
