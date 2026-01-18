@@ -6,13 +6,17 @@ import { DivOperation } from '../operations/DivOperation.js';
 export class OperationManager {
   constructor() {
     this.active = null; // { op: '+', row, anchorCol }
+    
+    // Shared instance of DivOperation for state management
+    const divOp = new DivOperation(); 
+    
     this.registry = { 
       '+': new AddOperation(),
       '*': new MulOperation(),
       'x': new MulOperation(),
       'X': new MulOperation(),
-      '/': new DivOperation(),
-      ':': new DivOperation(),
+      '/': divOp, //  same instance for both '/' and ':'
+      ':': divOp,
       '-': new SubOperation(),
     };
     this.resultRanges = [];

@@ -21,6 +21,10 @@ export class DivOperation {
       grid?.updateCell?.(typedRow, equalsCol);
     }
 
+    // Calculate working area: dividend + ':' + divisor + '='
+    const totalChars = aStr.length + 1 + bStr.length + 1;
+    const workAreaSize = totalChars;
+
     // Initialize division state for jumping
     if (!opManager.divisionState) {
       opManager.divisionState = {};
@@ -32,8 +36,13 @@ export class DivOperation {
       dividendStartCol: aStart,
       quotientStartCol: equalsCol + 1,
       currentStep: 0,
-      isAtQuotient: true
-    };
+      phase: 'quotient', // quotient -> remainder -> brought-down -> quotient
+      // work-area boundaries (NxN)
+      workAreaStartCol: aStart,
+      workAreaEndCol: equalsCol + workAreaSize, // include quotient column(s)
+      workAreaStartRow: typedRow,
+      workAreaEndRow: typedRow + workAreaSize,
+     };
 
     // Cursor goes AFTER "="
     return { cursorRow: typedRow, cursorCol: equalsCol + 1 };
@@ -44,28 +53,36 @@ export class DivOperation {
     const divState = this.findDivisionState(doc, row, col, opManager);
     if (!divState) return null;
 
-    const { dividendRow, dividendStartCol, quotientStartCol, currentStep, isAtQuotient } = divState;
+    const { dividendRow, dividendStartCol, quotientStartCol, currentStep, phase } = divState;
 
-    if (isAtQuotient) {
-      // Just typed a quotient digit → jump to remainder position
+    if (phase === 'quotient') {
+      // Just typed a quotient digit now jump to remainder position
       divState.currentStep++;
-      divState.isAtQuotient = false;
+      divState.phase = 'remainder';
       
       const jumpRow = dividendRow + divState.currentStep;
       return {
         cursorRow: jumpRow,
         cursorCol: dividendStartCol
       };
-    } else {
-      // Just typed a remainder → jump back to quotient position
-      divState.isAtQuotient = true;
-      
+    } else if (phase === 'remainder') {
+      // just typed the remainder now jump to the right
+      divState.phase = 'brought-down';
+      return {
+        cursorRow: row,
+        cursorCol: col + 1
+      };
+    } else if (phase === 'brought-down') {
+      // Just typed a brought-down digit now jump to next quotient position
+      divState.phase = 'quotient';
+
       const quotientCol = quotientStartCol + divState.currentStep - 1;
       return {
         cursorRow: dividendRow,
         cursorCol: quotientCol + 1
       };
     }
+    return null;
   }
 
   // Find which division operation this cursor position belongs to
@@ -73,18 +90,38 @@ export class DivOperation {
     if (!opManager.divisionState) return null;
 
     for (const state of Object.values(opManager.divisionState)) {
-      const { dividendRow, dividendStartCol, quotientStartCol } = state;
-      
-      const maxQuotientCol = quotientStartCol + 20;
-      const maxRemainderRow = dividendRow + 20;
+      const { dividendRow, 
+              quotientStartCol, 
+              phase,
+              workAreaStartCol,
+              workAreaEndCol,
+              workAreaStartRow,
+              workAreaEndRow 
+            } = state;
+
+      // Check if we're in the working area
+      const inWorkingArea = (
+        row >= workAreaStartRow && 
+        row <= workAreaEndRow &&
+        col >= workAreaStartCol &&
+        col <= workAreaEndCol
+      );
+
+      // Outside working area
+      if (!inWorkingArea) {
+        continue;
+      }
+
+      // We are IN the working area now apply phase logic
       
       // Check if we're typing in quotient area
-      if (row === dividendRow && col >= quotientStartCol && col < maxQuotientCol) {
+      if (phase === 'quotient' && row === dividendRow && col >= quotientStartCol) {
         return state;
       }
       
-      // Check if we're typing in remainder area (under first digit of dividend)
-      if (row > dividendRow && row <= maxRemainderRow && col === dividendStartCol) {
+      // Check if we're typing in remainder or brought-down area (anywhere below dividend in working area)
+      if ((phase === 'remainder' || phase === 'brought-down') && 
+          row > dividendRow) {
         return state;
       }
     }
