@@ -55,6 +55,18 @@ export class DivOperation {
 
     const { dividendRow, dividendStartCol, quotientStartCol, currentStep, phase } = divState;
 
+    // resync after delete / correction
+    if (row === divState.dividendRow) {
+      divState.phase = 'quotient';
+      
+      // count already typed quotient digits
+      let typedQuotientLength = 0;
+      for (let c = quotientStartCol; c < col; c++) {
+        if (doc.getCell(dividendRow, c)?.char) typedQuotientLength++;
+      }
+      divState.currentStep = typedQuotientLength;
+    }
+
     if (phase === 'quotient') {
       // Just typed a quotient digit now jump to remainder position
       divState.currentStep++;
@@ -105,7 +117,7 @@ export class DivOperation {
         row <= workAreaEndRow &&
         col >= workAreaStartCol &&
         col <= workAreaEndCol
-      );
+      ) || (row === dividendRow && col >= quotientStartCol);
 
       // Outside working area
       if (!inWorkingArea) {
