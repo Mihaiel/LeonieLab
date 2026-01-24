@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  app2:
+    image: nginx:alpine
+    container_name: leonielab
+    volumes:
+      - .:/usr/share/nginx/html:ro
+    ports:
+      - "8082:80"
+    restart: unless-stopped
