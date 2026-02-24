@@ -1,8 +1,15 @@
+<p align="center">
+  <img width="104" height="110" alt="icon" src="https://github.com/user-attachments/assets/1329565f-9f96-47c0-898e-ba93aab6bbc3" />
+</p>
+
 # LeonieLab Web Application
 
 LeonieLab is a client-side, browser-based web application designed to support
 accessible, structured math exercises (addition, subtraction, multiplication,
 division) in a middle school oriented system for users with motor impairments.
+
+## Preview
+https://github.com/user-attachments/assets/3b75a411-e2a0-4c1c-8901-4f5a45179db5
 
 ## Project Context
 - Research Project: NEST – Innovation Challenge at the University of Applied Sciences Campus Vienna
