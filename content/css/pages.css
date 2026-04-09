@@ -82,6 +82,7 @@
   align-items: center;
   background: transparent;
   font-size: var(--fs-h2);
+  position: relative;
 }
 
 .worksheet-grid{
@@ -138,3 +139,22 @@
 .worksheet-cell.result-correct{ color: var(--color-primary); }
 .worksheet-cell.result-wrong{ color: var(--color-red); }
 .worksheet-cell.box-selected{ background: var(--color-primary-bg-20); }
+
+/* Carry / borrow scratch overlays — absolute-positioned on top-right of A-row digit cells */
+.scratch-overlay {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 1rem;
+  color: #bbb;
+  line-height: 1;
+  pointer-events: none;
+  min-width: 8px;
+  text-align: center;
+  border-radius: 2px;
+}
+
+.scratch-overlay.scratch-active {
+  outline: 1px solid var(--color-primary);
+  color: var(--color-primary);
+}

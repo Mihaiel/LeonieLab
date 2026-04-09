@@ -118,6 +118,14 @@ export class AddOperation {
     const resStart        = underlineStart;
     const correctStartCol = resEnd - (correct.length - 1);
 
+    // Scratch row: one row above A for carry annotations (null when A is on row 0)
+    const scratchRow   = topRow > 0 ? topRow - 1 : null;
+    const scratchStart = spanStart;
+    const scratchEnd   = endCol;
+
+    // Apply scratch-carry class immediately (applyAllDecorations handles re-renders)
+    if (scratchRow != null) grid?.markScratchRow?.(scratchRow, topRow, scratchStart, scratchEnd);
+
     return {
       resultRange: {
         row: rowRes,
@@ -135,6 +143,9 @@ export class AddOperation {
         // Store the exact underline range so Backspace can remove it correctly.
         // (boxRange.startCol may be to the left of underlineStart when plusCol < underlineStart.)
         underlineStart,
+        scratchRow,
+        scratchStart,
+        scratchEnd,
       },
     };
   }

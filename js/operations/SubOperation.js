@@ -117,10 +117,29 @@ export class SubOperation {
     grid?.removeUnderline?.(row1, underlineStart, endCol);
     grid?.addUnderline?.(row1, underlineStart, endCol);
 
-    const diff            = (parseInt(fullAStr, 10) - parseInt(bStr, 10)).toString();
+    const diffNum         = parseInt(fullAStr, 10) - parseInt(bStr, 10);
+    const isNegative      = diffNum < 0;
+    const diff            = Math.abs(diffNum).toString();
     const resEnd          = endCol;
     const resStart        = underlineStart;
     const correctStartCol = resEnd - (diff.length - 1);
+
+    // Pre-fill the minus sign when A < B so the student types the absolute value
+    if (isNegative) {
+      const minusCol = correctStartCol - 1;
+      if (doc.inBounds(rowRes, minusCol)) {
+        doc.setCell(rowRes, minusCol, '-');
+        grid?.updateCell?.(rowRes, minusCol);
+      }
+    }
+
+    // Scratch row: one row above A for borrow annotations (null when A is on row 0)
+    const scratchRow   = topRow > 0 ? topRow - 1 : null;
+    const scratchStart = spanStart;
+    const scratchEnd   = endCol;
+
+    // Apply scratch-carry class immediately (applyAllDecorations handles re-renders)
+    if (scratchRow != null) grid?.markScratchRow?.(scratchRow, topRow, scratchStart, scratchEnd);
 
     return {
       resultRange: {
@@ -137,6 +156,9 @@ export class SubOperation {
         startCol: spanStart,
         endCol:   endCol,
         underlineStart,
+        scratchRow,
+        scratchStart,
+        scratchEnd,
       },
     };
   }

@@ -13,6 +13,7 @@ export class ApplicationLogic {
     this.grid = grid; // the renderer (updates UI)
     this.cursor = { row: 0, col: 0 };
     this.opManager = opManager; // optional; injected to keep concerns separated
+    this.scratchMode = null; // { scratchRow, aRow, col } when editing a scratch overlay
   }
 
   // Set starting position (top-left)
@@ -22,6 +23,11 @@ export class ApplicationLogic {
 
   // Keep cursor inside grid and update the highlight
   setCursor(r, c) {
+    // Exit scratch mode whenever the cursor moves
+    if (this.scratchMode) {
+      this.grid?.setScratchCursor?.(this.scratchMode.aRow, this.scratchMode.col, false);
+      this.scratchMode = null;
+    }
     const row = Math.max(0, Math.min(this.doc.rows - 1, r));
     const col = Math.max(0, Math.min(this.doc.cols - 1, c));
     this.cursor = { row, col };
@@ -42,6 +48,8 @@ export class ApplicationLogic {
 
   // Handle a single key (called from main.js)
   handleKey(key) {
+    // In scratch mode all keys are routed to the overlay handler
+    if (this.scratchMode) return this._handleScratchKey(key);
     // 0-9 digits
     if (/^[0-9]$/.test(key)) {
       // If we are in a result-entry phase, let the operation manager handle leftward fill
@@ -87,7 +95,7 @@ export class ApplicationLogic {
       } else {
         // Normal behavior: write and move to next cell
         this.typeDigit(key);
-      }       
+      }
       return true;
     }
 
@@ -116,6 +124,29 @@ export class ApplicationLogic {
                 }
               }
             }
+            // Clear scratch row (carry/borrow annotations above A)
+            if (box.boxRange.scratchRow != null) {
+              const sr = box.boxRange.scratchRow;
+              const ss = box.boxRange.scratchStart ?? startCol;
+              const se = box.boxRange.scratchEnd ?? endCol;
+              // Clear scratch data from doc
+              for (let c = ss; c <= se; c++) {
+                this.doc.setCell(sr, c, '');
+              }
+              // Remove scratch overlays from the aRow (topRow) cells
+              for (let c = ss; c <= se; c++) {
+                const aIdx = topRow * this.doc.cols + c;
+                const aEl = this.grid?.gridEl?.children?.[aIdx];
+                if (aEl) aEl.querySelectorAll(`.scratch-overlay[data-scratch-row="${sr}"]`).forEach(ov => ov.remove());
+              }
+              // Remove from scratchRows Set if no other box uses this scratch row
+              const otherUses = (this.opManager?.resultRanges || []).filter(r =>
+                r.boxRange?.scratchRow === sr && r.boxRange !== box.boxRange
+              );
+              if (otherUses.length === 0) {
+                this.grid?.scratchRows?.delete(sr);
+              }
+            }
             // Remove underline from the operator row.
             // Use boxRange.underlineStart when present (Add/Sub store it explicitly
             // because plusCol/minusCol can sit to the left of the underline start,
@@ -142,7 +173,17 @@ export class ApplicationLogic {
         return true;
       case 'ArrowLeft': this.moveLeft(); return true;
       case 'ArrowRight': this.moveRight(); return true;
-      case 'ArrowUp': this.moveUp(); return true;
+      case 'ArrowUp': {
+        const scratch = this.opManager?.getScratchForCell?.(this.cursor.row, this.cursor.col);
+        if (scratch) {
+          // Enter scratch mode for this cell's overlay
+          this.scratchMode = { scratchRow: scratch.scratchRow, aRow: this.cursor.row, col: this.cursor.col };
+          this.grid?.setScratchCursor?.(this.cursor.row, this.cursor.col, true);
+        } else {
+          this.moveUp();
+        }
+        return true;
+      }
       case 'ArrowDown': this.moveDown(); return true;
     }
 
@@ -259,6 +300,66 @@ export class ApplicationLogic {
     }
 
     return false; // unhandled key
+  }
+
+  // Handle key input while a scratch overlay is active
+  _handleScratchKey(key) {
+    const { scratchRow, aRow, col } = this.scratchMode;
+
+    if (/^[0-9]$/.test(key)) {
+      this.doc.setCell(scratchRow, col, key);
+      this.grid?.updateCell?.(scratchRow, col);
+      return true;
+    }
+
+    if (key === 'Backspace') {
+      const current = this.doc.getCell(scratchRow, col)?.char || '';
+      if (current) {
+        this.doc.setCell(scratchRow, col, '');
+        this.grid?.updateCell?.(scratchRow, col);
+      } else {
+        // Empty overlay — exit scratch mode without deleting anything
+        this.grid?.setScratchCursor?.(aRow, col, false);
+        this.scratchMode = null;
+        this.setCursor(aRow, col);
+      }
+      return true;
+    }
+
+    if (key === 'ArrowDown' || key === 'Enter' || key === 'Escape') {
+      this.grid?.setScratchCursor?.(aRow, col, false);
+      this.scratchMode = null;
+      this.setCursor(aRow, col);
+      return true;
+    }
+
+    if (key === 'ArrowLeft') {
+      const newCol = col - 1;
+      const scratch = this.opManager?.getScratchForCell?.(aRow, newCol);
+      if (scratch && scratch.scratchRow === scratchRow) {
+        this.grid?.setScratchCursor?.(aRow, col, false);
+        this.scratchMode = { scratchRow, aRow, col: newCol };
+        this.grid?.setScratchCursor?.(aRow, newCol, true);
+      }
+      return true;
+    }
+
+    if (key === 'ArrowRight') {
+      const newCol = col + 1;
+      const scratch = this.opManager?.getScratchForCell?.(aRow, newCol);
+      if (scratch && scratch.scratchRow === scratchRow) {
+        this.grid?.setScratchCursor?.(aRow, col, false);
+        this.scratchMode = { scratchRow, aRow, col: newCol };
+        this.grid?.setScratchCursor?.(aRow, newCol, true);
+      }
+      return true;
+    }
+
+    if (key === 'ArrowUp') {
+      return true; // already in scratch mode, absorb
+    }
+
+    return false;
   }
 
   // Put a digit into current cell and go to next cell

@@ -197,6 +197,20 @@ export class OperationManager {
   }
 
   
+  // Returns { scratchRow, aRow } if (row, col) is on the A-row of a box that has a scratch range.
+  getScratchForCell(row, col) {
+    for (const r of this.resultRanges) {
+      const b = r.boxRange;
+      if (!b || b.scratchRow == null) continue;
+      const ss = b.scratchStart ?? b.startCol;
+      const se = b.scratchEnd   ?? b.endCol;
+      if (row === b.topRow && col >= ss && col <= se) {
+        return { scratchRow: b.scratchRow, aRow: b.topRow };
+      }
+    }
+    return null;
+  }
+
   isLockedCell(row, col) { return !!this.getLockedRangeAt(row, col); }
   getLockedRangeAt(row, col) {
     const r = this.resultRanges.find(r => r.locked && r.boxRange && (

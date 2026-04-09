@@ -9,6 +9,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Carry/borrow scratch overlays** — After an addition or subtraction block is
+  formatted, each digit cell of the top operand (A) shows a small placeholder in
+  its top-right corner for carry or borrow annotations. Press `ArrowUp` while the
+  cursor is on any of those cells to enter scratch mode: type a single digit into
+  the overlay, navigate between overlays with `ArrowLeft` / `ArrowRight` and
+  return to the main row with `ArrowDown`, `Enter` or `Escape`. Backspace clears
+  the overlay digit, or exits scratch mode if the overlay is already empty. Scratch
+  data is stored in the document and survives save/open, undo, and auto-save.
+
+- **Negative subtraction results** — Subtracting a larger number from a smaller
+  one (e.g. `300−500`) is now fully supported. The formatter pre-fills a minus sign
+  to the left of the result row so the student only needs to type the absolute
+  value. The result is checked against the correct magnitude.
+
 - **Audio feedback** - Short tones play when a student enters a result digit.
   A bright sine tone (A5) confirms a correct answer; a low sawtooth tone (A2)
   signals a wrong one. Removes the need to look away from the keyboard to check
