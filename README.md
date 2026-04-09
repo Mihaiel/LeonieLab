@@ -9,7 +9,11 @@ accessible, structured math exercises (addition, subtraction, multiplication,
 division) in a middle school oriented system for users with motor impairments.
 
 ## Preview
-https://github.com/user-attachments/assets/3b75a411-e2a0-4c1c-8901-4f5a45179db5
+
+
+https://github.com/user-attachments/assets/182b1579-7d9f-418a-b77e-ddc8f89b1b80
+
+
 
 ## Project Context
 - Research Project: NEST – Innovation Challenge at the University of Applied Sciences Campus Vienna
