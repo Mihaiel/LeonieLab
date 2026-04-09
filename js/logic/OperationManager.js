@@ -21,6 +21,8 @@ export class OperationManager {
       '-': new SubOperation(),
     };
     // resultRanges is now backed by doc.operationRanges — no separate array.
+    // Audio hook: assign a function(verdict: 'correct'|'wrong') to receive feedback events.
+    this.onVerdict = null;
   }
 
   // Proxy resultRanges through doc so the data survives mount() / renderAll().
@@ -102,9 +104,12 @@ export class OperationManager {
     } else {
       // Default behavior (addition + multiplication final): blue if correct, red if wrong
       this.applyResultClass(grid, row, checkStart, checkEnd, ok ? 'result-correct' : 'result-wrong');
+      if (!ok) this.onVerdict?.('wrong');
     }
 
     if (ok) {
+      this.onVerdict?.('correct');
+
       // Lock only the CHECK zone (not the whole wide box)
       this.markRangeLocked(grid, row, checkStart, checkEnd);
 

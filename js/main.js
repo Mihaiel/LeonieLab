@@ -6,6 +6,7 @@ import { ApplicationLogic } from './logic/ApplicationLogic.js';
 import { OperationManager } from './logic/OperationManager.js';
 import { DocumentService } from './services/DocumentService.js';
 import { UndoManager } from './services/UndoManager.js';
+import { AudioFeedback } from './services/AudioFeedback.js';
 
 function setupWorksheet(){
   const main = document.getElementById('main-content');
@@ -27,6 +28,12 @@ function setupWorksheet(){
   logic.init();
   const undoMgr = new UndoManager();
   const ds = new DocumentService();
+
+  const audio = new AudioFeedback();
+  opManager.onVerdict = (verdict) => {
+    if (verdict === 'correct') audio.correct();
+    else if (verdict === 'wrong') audio.wrong();
+  };
 
   // buttons
   const q = (id) => document.getElementById(id);
@@ -148,8 +155,8 @@ function setupWorksheet(){
     }
 
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    // Allow auto-repeat only for Backspace (so user can hold to erase)
-    if (e.repeat && e.key !== 'Backspace') return;
+    // Allow auto-repeat for Backspace (erase) and arrow keys (navigation)
+    if (e.repeat && e.key !== 'Backspace' && !e.key.startsWith('Arrow')) return;
 
     // One-click exit from a locked box selection with arrow keys
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
@@ -188,6 +195,21 @@ function setupWorksheet(){
     e.preventDefault();
     return;
     }
+    }
+
+    // Tab: jump to the next unlocked result row (wraps around)
+    if (e.key === 'Tab') {
+      const unlocked = (opManager.resultRanges || []).filter(r => !r.locked);
+      if (unlocked.length > 0) {
+        unlocked.sort((a, b) => a.row - b.row || a.endCol - b.endCol);
+        const cur = logic.cursor;
+        let target = unlocked.find(r => r.row > cur.row || (r.row === cur.row && r.endCol > cur.col));
+        if (!target) target = unlocked[0]; // wrap around
+        opManager.beginResultEntry(target);
+        logic.setCursor(target.row, target.endCol);
+      }
+      e.preventDefault();
+      return;
     }
 
     // Snapshot state before mutation for undo
