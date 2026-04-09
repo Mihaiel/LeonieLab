@@ -4,6 +4,8 @@
 
 # LeonieLab Web Application
 
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 LeonieLab is a client-side, browser-based web application designed to support
 accessible, structured math exercises (addition, subtraction, multiplication,
 division) in a middle school oriented system for users with motor impairments.
@@ -49,9 +51,21 @@ Requirements:
   - `Open`: Load a previously saved worksheet from a `.txt` file.
   - `Save`: Download the current worksheet as a timestamped `.txt` file.
   - `Save as PDF`: Export the grid as a PDF (portrait, with margins).
-  - `Print`: Open the browser’s print dialog for the worksheet.
+  - `Print`: Open the browser's print dialog for the worksheet.
   - `Clear All`: Reset the grid and selections.
 - Accessibility: Large grid cells and keyboard‑first interaction support motor‑impairment friendly workflows.
 
 Notes:
 - Files and routes assume the server root is the project folder. If you open `content/index.html` directly from the filesystem, absolute paths like `/js/main.js` may not load; prefer running a local server as shown above.
+
+---
+
+## Contributing
+
+Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md) for instructions, code style guidelines, and the pull request process.
+
+Please read the [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
+
+## License
+
+[MIT](LICENSE) © 2026 Mihaiel Birta

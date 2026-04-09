@@ -1,3 +1,21 @@
+# macOS
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Node (if anyone ever runs npm for tooling)
+node_modules/
+npm-debug.log*
+
+# Local environment
+.env
+.env.local
