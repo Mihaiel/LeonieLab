@@ -11,12 +11,15 @@
 // Exports/imports the grid as plain JSON text
 export class DocumentService {
   exportToText(doc){
-    // keep it simple: rows, cols, grid
+    // version 2 adds underlineRanges + operationRanges so decorations survive
+    // save/load cycles (version 1 files remain readable — they just won't restore decorations)
     const payload = {
       rows: doc.rows,
       cols: doc.cols,
       grid: doc.grid,
-      version: 1
+      underlineRanges:  doc.underlineRanges  || [],
+      operationRanges:  doc.operationRanges  || [],
+      version: 2,
     };
     return JSON.stringify(payload);
   }
@@ -30,6 +33,9 @@ export class DocumentService {
       doc.grid = Array.from({ length: doc.rows }, (_, r) =>
         Array.from({ length: doc.cols }, (_, c) => ({ char: data.grid?.[r]?.[c]?.char || '' }))
       );
+      // Restore structural ranges (version 2+); version 1 files default to empty arrays
+      doc.underlineRanges = Array.isArray(data.underlineRanges) ? data.underlineRanges : [];
+      doc.operationRanges = Array.isArray(data.operationRanges) ? data.operationRanges : [];
       return true;
     }catch{ return false; }
   }

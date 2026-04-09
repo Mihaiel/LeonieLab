@@ -21,7 +21,7 @@ function setupWorksheet(){
   const doc = new Document();
   const grid = new GridRenderer(root, doc);
   grid.mount();
-  const opManager = new OperationManager();
+  const opManager = new OperationManager(doc);
   const logic = new ApplicationLogic(doc, grid, opManager);
   logic.init();
 

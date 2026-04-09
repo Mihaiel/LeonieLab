@@ -10,169 +10,189 @@
 
 export class SubOperation {
   format(doc, grid, { row, anchorCol }, opManager) {
-    // 1) Parse contiguous digits around the '-' anchor on the typed row
     const typedRow = row;
     const parsed = this.parseAround(doc, typedRow, anchorCol);
     if (!parsed) return;
-    const { aStart, aEnd, bStart, bEnd, aStr, bStr } = parsed;
-
-    // Compute difference (for checking only) and align everything by the ones column of A (aEnd)
-    const diff = (parseInt(aStr, 10) - parseInt(bStr, 10)).toString();
-    const endCol = aEnd; // ones column alignment
-
-    // 2) Decide B positioning and '-' column based on operand widths
-    const bWriteEnd = endCol;
-    const bWriteStart = bWriteEnd - (bStr.length - 1);
+    const { aStart, aEnd, bStart, bEnd, bRow, aStr, bStr } = parsed;
 
     const aLen = aStr.length;
     const bLen = bStr.length;
 
-    // Put the '-' one cell before the larger operand start
-    const biggerStart = (bLen > aLen ? bWriteStart : aStart);
-    const minusCol = Math.max(0, biggerStart - 1);
+    // Right-align both operands by A's ones column.
+    const endColRaw      = aEnd;
+    const bWriteEndRaw   = endColRaw;
+    const bWriteStartRaw = bWriteEndRaw - (bLen - 1);
+    const biggerStart    = (bLen > aLen ? bWriteStartRaw : aStart);
 
-    // Underline width based on max operand width
-    const maxWidth = Math.max(aLen, bLen);
+    // Bug 1 fix — col-0 entry:
+    // When A starts at col 0 the natural operator column is -1 (no room).
+    // Shift the entire formatted block right by the deficit so the operator
+    // fits at col 0 and A/B are rewritten one column to the right.
+    const naturalMinusCol = biggerStart - 1;
+    const colShift = naturalMinusCol < 0 ? -naturalMinusCol : 0;
+
+    const endCol    = endColRaw + colShift;
+    const minusCol  = naturalMinusCol + colShift;   // guaranteed >= 0
+    const bWriteEnd = endCol;
+    const bWriteStart = bWriteEnd - (bLen - 1);
+
+    const maxWidth       = Math.max(aLen, bLen);
     const underlineStart = endCol - (maxWidth - 1);
-    const spanStart = Math.min(underlineStart, minusCol);
-    const spanEnd = endCol;
+    const spanStart      = Math.min(underlineStart, minusCol);
+    const spanEnd        = endCol;
 
-    // 3) Prevent overlap with locked boxes or filled cells; shift in blocks of 3
-    let shift = 0;
+    // --- CLEAR INPUT PHASE (do this before the conflict scan so a wrapped B
+    //     does not create a false positive in rowHasContent) ---
 
-    const within = (r, c) => r >= 0 && r < doc.rows && c >= 0 && c < doc.cols;
-
-    const rowHasContent = (r, s, e) => {
-      if (r < 0 || r >= doc.rows) return false;
-      for (let c = s; c <= e; c++) {
-        if (!within(r, c)) continue;
-        const ch = doc.getCell(r, c)?.char || '';
-        if (ch) return true;
-      }
-      return false;
-    };
-
-    const intersectsLocked = (r) =>
-      !!opManager?.resultRanges?.some(b =>
-        b.locked &&
-        b.boxRange &&
-        r >= b.boxRange.topRow &&
-        r <= b.boxRange.resRow &&
-        !(spanEnd < b.boxRange.startCol || spanStart > b.boxRange.endCol)
-      );
-
-    while (
-      typedRow + 2 + shift < doc.rows &&
-      (
-        intersectsLocked(typedRow + 1 + shift) ||
-        intersectsLocked(typedRow + 2 + shift) ||
-        rowHasContent(typedRow + 1 + shift, spanStart, spanEnd) ||
-        rowHasContent(typedRow + 2 + shift, spanStart, spanEnd)
-      )
-    ) {
-      shift += 3;
-    }
-
-    const row1 = typedRow + 1 + shift;  // operator row
-    const rowRes = typedRow + 2 + shift; // result entry row
-
-    // 4) Keep A where it was typed on typedRow; remove the '-' and the typed B from that typedRow
+    // Remove '-' from typedRow
     if (doc.inBounds(typedRow, anchorCol)) {
       doc.setCell(typedRow, anchorCol, '');
       grid?.updateCell?.(typedRow, anchorCol);
     }
+
+    // Remove B from wherever it was typed.
+    // bRow may differ from typedRow when B wrapped to the next row (right-edge fix).
     for (let c = bStart; c <= bEnd; c++) {
-      if (doc.inBounds(typedRow, c)) {
-        doc.setCell(typedRow, c, '');
-        grid?.updateCell?.(typedRow, c);
+      if (doc.inBounds(bRow, c)) {
+        doc.setCell(bRow, c, '');
+        grid?.updateCell?.(bRow, c);
       }
     }
 
-    // 5) Clear target span on row1, place '-' then write B right-aligned to endCol
+    // If the block was shifted right, erase A at its original position and
+    // rewrite it one column further right on typedRow.
+    if (colShift > 0) {
+      for (let c = aStart; c <= aEnd; c++) {
+        if (doc.inBounds(typedRow, c)) {
+          doc.setCell(typedRow, c, '');
+          grid?.updateCell?.(typedRow, c);
+        }
+      }
+      for (let i = 0; i < aStr.length; i++) {
+        const c = aStart + colShift + i;
+        if (doc.inBounds(typedRow, c)) {
+          doc.setCell(typedRow, c, aStr[i]);
+          grid?.updateCell?.(typedRow, c);
+        }
+      }
+    }
+
+    // --- FIND OUTPUT ROWS (scan after clearing so wrapped B is gone) ---
+    let rowShift = 0;
+    const within = (r, c) => r >= 0 && r < doc.rows && c >= 0 && c < doc.cols;
+    const rowHasContent = (r, s, e) => {
+      if (r < 0 || r >= doc.rows) return false;
+      for (let c = s; c <= e; c++) {
+        if (!within(r, c)) continue;
+        if (doc.getCell(r, c)?.char) return true;
+      }
+      return false;
+    };
+    const intersectsLocked = (r) =>
+      !!opManager?.resultRanges?.some(b =>
+        b.locked && b.boxRange &&
+        r >= b.boxRange.topRow && r <= b.boxRange.resRow &&
+        !(spanEnd < b.boxRange.startCol || spanStart > b.boxRange.endCol)
+      );
+    while (
+      typedRow + 2 + rowShift < doc.rows &&
+      (
+        intersectsLocked(typedRow + 1 + rowShift) ||
+        intersectsLocked(typedRow + 2 + rowShift) ||
+        rowHasContent(typedRow + 1 + rowShift, spanStart, spanEnd) ||
+        rowHasContent(typedRow + 2 + rowShift, spanStart, spanEnd)
+      )
+    ) {
+      rowShift += 3;
+    }
+    const row1   = typedRow + 1 + rowShift;
+    const rowRes = typedRow + 2 + rowShift;
+
+    // --- WRITE OUTPUT ---
     const clearStart = Math.max(0, Math.min(minusCol, bWriteStart));
     for (let c = clearStart; c <= bWriteEnd; c++) {
-      if (doc.inBounds(row1, c)) {
-        doc.setCell(row1, c, '');
-        grid?.updateCell?.(row1, c);
-      }
+      if (doc.inBounds(row1, c)) { doc.setCell(row1, c, ''); grid?.updateCell?.(row1, c); }
     }
-
-    if (minusCol >= 0 && doc.inBounds(row1, minusCol)) {
-      doc.setCell(row1, minusCol, '-');
-      grid?.updateCell?.(row1, minusCol);
-    }
-
+    if (doc.inBounds(row1, minusCol)) { doc.setCell(row1, minusCol, '-'); grid?.updateCell?.(row1, minusCol); }
     for (let i = 0; i < bStr.length; i++) {
       const col = bWriteStart + i;
-      if (doc.inBounds(row1, col)) {
-        doc.setCell(row1, col, bStr[i]);
-        grid?.updateCell?.(row1, col);
-      }
+      if (doc.inBounds(row1, col)) { doc.setCell(row1, col, bStr[i]); grid?.updateCell?.(row1, col); }
     }
 
-    // 6) Underline must match the widest operand (A or B)
     grid?.removeUnderline?.(row1, underlineStart, endCol);
     grid?.addUnderline?.(row1, underlineStart, endCol);
 
-    // 7) Do not auto-calculate: start a result-entry phase with alignment and correctness info
-    const resEnd = endCol;
-    const width = Math.max(aStr.length, bStr.length);
-    const resStart = resEnd - (width - 1);
-
-    const correctDigits = diff;
-    const correctStartCol = resEnd - (correctDigits.length - 1);
+    const diff           = (parseInt(aStr, 10) - parseInt(bStr, 10)).toString();
+    const resEnd         = endCol;
+    const resStart       = resEnd - (maxWidth - 1);
+    const correctStartCol = resEnd - (diff.length - 1);
 
     return {
       resultRange: {
         row: rowRes,
         startCol: resStart,
         endCol: resEnd,
-        correctDigits,
+        correctDigits: diff,
         correctStartCol,
       },
       boxRange: {
-        topRow: typedRow,
-        bRow: row1,
-        resRow: rowRes,
+        topRow:   typedRow,
+        bRow:     row1,
+        resRow:   rowRes,
         startCol: Math.min(underlineStart, minusCol),
-        endCol: endCol,
+        endCol:   endCol,
       },
     };
   }
 
-  // Parse "A-B" on a single row where '-' is at anchorCol
+  // Parse "A - B" on typedRow.
+  // Right-edge fix: if B is not found to the right of the operator on the same
+  // row (operator is at the last column), scan for B on the next row from col 0.
   parseAround(doc, row, minusCol) {
     if (row < 0 || row >= doc.rows || minusCol == null) return null;
 
     // Scan left for A
-    let aEnd = minusCol - 1;
+    let aEnd   = minusCol - 1;
     let aStart = aEnd;
     while (aStart >= 0) {
       const ch = doc.getCell(row, aStart)?.char || '';
-      if (ch >= '0' && ch <= '9') aStart--;
-      else break;
+      if (ch >= '0' && ch <= '9') aStart--; else break;
     }
     aStart++;
     if (aStart > aEnd) return null;
 
-    // Scan right for B
+    // Scan right for B on the same row
+    let bRow   = row;
     let bStart = minusCol + 1;
-    if (bStart >= doc.cols) return null;
+    let bEnd   = bStart;
 
-    let bEnd = bStart;
-    while (bEnd < doc.cols) {
-      const ch = doc.getCell(row, bEnd)?.char || '';
-      if (ch >= '0' && ch <= '9') bEnd++;
-      else break;
+    if (bStart < doc.cols) {
+      while (bEnd < doc.cols) {
+        const ch = doc.getCell(bRow, bEnd)?.char || '';
+        if (ch >= '0' && ch <= '9') bEnd++; else break;
+      }
+      bEnd--;
     }
-    bEnd--;
+
+    // If B not found on same row, try the next row from col 0.
+    if (bEnd < bStart && row + 1 < doc.rows) {
+      bRow   = row + 1;
+      bStart = 0;
+      bEnd   = 0;
+      while (bEnd < doc.cols) {
+        const ch = doc.getCell(bRow, bEnd)?.char || '';
+        if (ch >= '0' && ch <= '9') bEnd++; else break;
+      }
+      bEnd--;
+    }
+
     if (bEnd < bStart) return null;
 
-    const aStr = this.collectDigits(doc, row, aStart, aEnd);
-    const bStr = this.collectDigits(doc, row, bStart, bEnd);
+    const aStr = this.collectDigits(doc, row,  aStart, aEnd);
+    const bStr = this.collectDigits(doc, bRow, bStart, bEnd);
     if (!aStr || !bStr) return null;
 
-    return { aStart, aEnd, bStart, bEnd, aStr, bStr };
+    return { aStart, aEnd, bStart, bEnd, bRow, aStr, bStr };
   }
 
   collectDigits(doc, row, start, end) {

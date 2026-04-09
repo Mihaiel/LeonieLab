@@ -14,6 +14,10 @@ export class Document {
     this.grid = Array.from({ length: rows }, () =>
       Array.from({ length: cols }, () => ({ char: '' }))
     );
+    // Structural metadata — persisted here so GridRenderer can restore
+    // decorations after any full re-render (mount / renderAll).
+    this.underlineRanges = [];   // [{ row, startCol, endCol }]
+    this.operationRanges = [];   // same shape as OperationManager.resultRanges
   }
 
   inBounds(r, c) {
@@ -36,5 +40,7 @@ export class Document {
         this.grid[r][c].char = '';
       }
     }
+    this.underlineRanges = [];
+    this.operationRanges = [];
   }
 }

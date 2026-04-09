@@ -245,6 +245,15 @@ export class ApplicationLogic {
       return true;
     }
 
+    // Letters — for units and annotations (kg, cm, km, ml, t, A:, etc.)
+    // x and X are already handled above as multiplication operators and won't reach here.
+    // During result-entry mode only digits are valid, so letters are ignored there.
+    if (/^[a-zA-Z]$/.test(key)) {
+      if (this.opManager?.active?.op === 'result') return false;
+      this.typeDigit(key);
+      return true;
+    }
+
     return false; // unhandled key
   }
 

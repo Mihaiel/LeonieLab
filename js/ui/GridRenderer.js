@@ -33,13 +33,13 @@ export class GridRenderer {
     }
     this.root.appendChild(grid);
     this.gridEl = grid;
+    this.applyAllDecorations();
   }
 
   clear() {
     if (!this.gridEl) return;
-    this.doc.clearAll();
-    this.renderAll();
-    this.clearAllDecorations();
+    this.doc.clearAll(); // also wipes underlineRanges + operationRanges
+    this.renderAll();    // syncs text + calls applyAllDecorations (nothing to restore)
     if (this.overlayEl) this.overlayEl.style.display = 'none';
   }
 
@@ -49,10 +49,10 @@ export class GridRenderer {
     let idx = 0;
     for (let r = 0; r < this.doc.rows; r++) {
       for (let c = 0; c < this.doc.cols; c++) {
-        const el = cells[idx++];
-        el.textContent = this.doc.getCell(r, c)?.char || '';
+        cells[idx++].textContent = this.doc.getCell(r, c)?.char || '';
       }
     }
+    this.applyAllDecorations();
   }
 
   updateCell(r, c) {
@@ -128,25 +128,57 @@ export class GridRenderer {
     if (this.overlayEl) this.overlayEl.style.display = 'none';
   }
 
+  // Re-derive all persistent decorations from doc and apply to DOM.
+  // Called after every full render (mount / renderAll) so DOM never drifts from doc.
+  applyAllDecorations() {
+    if (!this.gridEl) return;
+    // Strip decoration classes from every cell first
+    Array.from(this.gridEl.children).forEach(el => {
+      el.classList.remove('underline', 'result-correct', 'result-wrong');
+      delete el.dataset.locked;
+    });
+    // Re-apply underlines
+    for (const { row, startCol, endCol } of this.doc.underlineRanges) {
+      for (let c = startCol; c <= endCol; c++) {
+        const el = this.gridEl.children[row * this.doc.cols + c];
+        if (el) el.classList.add('underline');
+      }
+    }
+    // Re-apply locked result zones
+    for (const range of this.doc.operationRanges) {
+      if (!range.locked) continue;
+      const s = range.lockedStartCol ?? range.startCol;
+      const e = range.lockedEndCol ?? range.endCol;
+      for (let c = s; c <= e; c++) {
+        const el = this.gridEl.children[range.row * this.doc.cols + c];
+        if (el) { el.classList.add('result-correct'); el.dataset.locked = '1'; }
+      }
+    }
+  }
+
   // Optional helpers for future operation strategies
   addUnderline(row, startCol, endCol) {
-    if (!this.gridEl) return;
     const s = Math.max(0, Math.min(startCol, endCol));
     const e = Math.min(this.doc.cols - 1, Math.max(startCol, endCol));
+    // Persist in doc so re-renders can restore it
+    this.doc.underlineRanges.push({ row, startCol: s, endCol: e });
+    if (!this.gridEl) return;
     for (let c = s; c <= e; c++) {
-      const idx = row * this.doc.cols + c;
-      const el = this.gridEl.children[idx];
+      const el = this.gridEl.children[row * this.doc.cols + c];
       if (el) el.classList.add('underline');
     }
   }
 
   removeUnderline(row, startCol, endCol) {
-    if (!this.gridEl) return;
     const s = Math.max(0, Math.min(startCol, endCol));
     const e = Math.min(this.doc.cols - 1, Math.max(startCol, endCol));
+    // Remove from doc
+    this.doc.underlineRanges = this.doc.underlineRanges.filter(
+      r => !(r.row === row && r.startCol === s && r.endCol === e)
+    );
+    if (!this.gridEl) return;
     for (let c = s; c <= e; c++) {
-      const idx = row * this.doc.cols + c;
-      const el = this.gridEl.children[idx];
+      const el = this.gridEl.children[row * this.doc.cols + c];
       if (el) el.classList.remove('underline');
     }
   }

@@ -4,23 +4,28 @@ import { SubOperation } from '../operations/SubOperation.js';
 import { DivOperation } from '../operations/DivOperation.js';
 
 export class OperationManager {
-  constructor() {
-    this.active = null; // { op: '+', row, anchorCol }
-    
+  constructor(doc) {
+    this.doc = doc;      // Document is the single source of truth for ranges
+    this.active = null;  // { op: '+', row, anchorCol }
+
     // Shared instance of DivOperation for state management
-    const divOp = new DivOperation(); 
-    
-    this.registry = { 
+    const divOp = new DivOperation();
+
+    this.registry = {
       '+': new AddOperation(),
       '*': new MulOperation(),
       'x': new MulOperation(),
       'X': new MulOperation(),
-      '/': divOp, //  same instance for both '/' and ':'
+      '/': divOp, // same instance for both '/' and ':'
       ':': divOp,
       '-': new SubOperation(),
     };
-    this.resultRanges = [];
+    // resultRanges is now backed by doc.operationRanges — no separate array.
   }
+
+  // Proxy resultRanges through doc so the data survives mount() / renderAll().
+  get resultRanges() { return this.doc?.operationRanges ?? []; }
+  set resultRanges(v) { if (this.doc) this.doc.operationRanges = v; }
 
   begin(op, row, anchorCol) { 
     if((op === '/' || op === ':') && this.registry['/']) {
@@ -103,9 +108,11 @@ export class OperationManager {
       // Lock only the CHECK zone (not the whole wide box)
       this.markRangeLocked(grid, row, checkStart, checkEnd);
 
-      // Keep your existing locked bookkeeping
+      // Persist locked zone cols so applyAllDecorations() can restore them after re-renders
       this.resultRanges = this.resultRanges.map(r =>
-        (r.row === row && r.startCol === startCol && r.endCol === endCol) ? { ...r, locked: true } : r
+        (r.row === row && r.startCol === startCol && r.endCol === endCol)
+          ? { ...r, locked: true, lockedStartCol: checkStart, lockedEndCol: checkEnd }
+          : r
       );
 
       this.active = null;
@@ -135,13 +142,14 @@ export class OperationManager {
     this.active.cursorCol = col;
   }
 
-  reset() { this.active = null; 
-            this.resultRanges = [];
-            //reset division state in DivOperation
-            if (this.registry['/']) {
-              this.registry['/'].resetState?.(this);
-            }
-          }
+  reset() {
+    this.active = null;
+    if (this.doc) this.doc.operationRanges = [];
+    // reset division state in DivOperation
+    if (this.registry['/']) {
+      this.registry['/'].resetState?.(this);
+    }
+  }
 
   // helpers
   clearResultClasses(grid, row, startCol, endCol) {
