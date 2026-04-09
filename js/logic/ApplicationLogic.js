@@ -116,8 +116,12 @@ export class ApplicationLogic {
                 }
               }
             }
-            // Remove underline from Row2
-            this.grid?.removeUnderline?.(bRow, startCol, endCol);
+            // Remove underline from the operator row.
+            // Use boxRange.underlineStart when present (Add/Sub store it explicitly
+            // because plusCol/minusCol can sit to the left of the underline start,
+            // making an exact-match removal with startCol fail).
+            const ulStart = box.boxRange?.underlineStart ?? startCol;
+            this.grid?.removeUnderline?.(bRow, ulStart, endCol);
             // remove underline #2 if present (multiplication)
             if (box.boxRange?.underline2Row != null) {
               const u2r = box.boxRange.underline2Row;

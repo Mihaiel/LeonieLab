@@ -1,7 +1,7 @@
 /* MulOperation
   ------------
   Keeps the expression "A·B" on ONE row. When the user presses Enter, it formats the worksheet like
-  handwritten multiplication 
+  handwritten multiplication
 */
 
 export class MulOperation {
@@ -12,7 +12,55 @@ export class MulOperation {
     const parsed = this.parseAround(doc, typedRow, anchorCol);
     if (!parsed) return null;
 
-    const { aStart, aEnd, bStart, bEnd, aStr, bStr } = parsed;
+    let { aStart, aEnd, bStart, bEnd, aStr, bStr } = parsed;
+    const { aAboveStr, aAboveRow, aAboveStart, aAboveEnd } = parsed;
+
+    const fullAStr  = aAboveStr + aStr;
+    const hasAboveA = aAboveStr.length > 0;
+
+    // opCol: column of the multiplication operator (may shift right after consolidation)
+    let opCol = anchorCol;
+
+    // --- MULTI-ROW A CONSOLIDATION ---
+    // If A wrapped from the previous row, rewrite the whole expression on typedRow
+    // so the rest of format() sees a single flat inline expression.
+    if (hasAboveA) {
+      const fullALen = fullAStr.length;
+      const opChar   = doc.getCell(typedRow, anchorCol)?.char || '·';
+
+      // Clear above-row A
+      for (let c = aAboveStart; c <= aAboveEnd; c++) {
+        if (doc.inBounds(aAboveRow, c)) { doc.setCell(aAboveRow, c, ''); grid?.updateCell?.(aAboveRow, c); }
+      }
+      // Clear typedRow: A digits + operator + B digits
+      for (let c = aStart; c <= aEnd; c++) {
+        if (doc.inBounds(typedRow, c)) { doc.setCell(typedRow, c, ''); grid?.updateCell?.(typedRow, c); }
+      }
+      if (doc.inBounds(typedRow, anchorCol)) { doc.setCell(typedRow, anchorCol, ''); grid?.updateCell?.(typedRow, anchorCol); }
+      for (let c = bStart; c <= bEnd; c++) {
+        if (doc.inBounds(typedRow, c)) { doc.setCell(typedRow, c, ''); grid?.updateCell?.(typedRow, c); }
+      }
+
+      // Write fullA starting at col 0
+      for (let i = 0; i < fullALen; i++) {
+        if (doc.inBounds(typedRow, i)) { doc.setCell(typedRow, i, fullAStr[i]); grid?.updateCell?.(typedRow, i); }
+      }
+      // Write operator at col fullALen
+      opCol = fullALen;
+      if (doc.inBounds(typedRow, opCol)) { doc.setCell(typedRow, opCol, opChar); grid?.updateCell?.(typedRow, opCol); }
+      // Write B starting at col fullALen+1
+      for (let i = 0; i < bStr.length; i++) {
+        const c = opCol + 1 + i;
+        if (doc.inBounds(typedRow, c)) { doc.setCell(typedRow, c, bStr[i]); grid?.updateCell?.(typedRow, c); }
+      }
+
+      // Update local variables to reflect the new inline positions
+      aStart = 0;
+      aEnd   = fullALen - 1;
+      aStr   = fullAStr;
+      bStart = opCol + 1;
+      bEnd   = opCol + bStr.length;
+    }
 
     // Right edge alignment = last digit column of B
     const boxEnd = bEnd;
@@ -86,16 +134,16 @@ export class MulOperation {
     const finalRow = lastPartialRow + 1;
 
     // 4) Replace typed operator with a centered dot for display (keep digits in place)
-    if (doc.inBounds(typedRow, anchorCol)) {
-      doc.setCell(typedRow, anchorCol, '·');
-      grid?.updateCell?.(typedRow, anchorCol);
+    if (doc.inBounds(typedRow, opCol)) {
+      doc.setCell(typedRow, opCol, '·');
+      grid?.updateCell?.(typedRow, opCol);
     }
 
     // 5) Draw underline #1 under the expression span
     grid?.removeUnderline?.(typedRow, underline1Start, underline1End);
     grid?.addUnderline?.(typedRow, underline1Start, underline1End);
 
-    const startCols = [aEnd, anchorCol];
+    const startCols = [aEnd, opCol];
     for (let c = bStart; c <= bEnd; c++) startCols.push(c);
 
     // 6) Create partial result ranges
@@ -111,7 +159,7 @@ export class MulOperation {
       // Where the correct digits start if right-aligned to boxEnd
       const correctStartCol = boxEnd - (str.length - 1);
 
-      // The cursor start position 
+      // The cursor start position
       const entryCol = startCols[Math.min(i, startCols.length - 1)];
 
       // Clear the typing area (do NOT auto-fill anything)
@@ -154,7 +202,7 @@ export class MulOperation {
     grid?.removeUnderline?.(underline2Row, underline2Start, boxEnd);
     grid?.addUnderline?.(underline2Row, underline2Start, boxEnd);
 
-    // 8) Final result range 
+    // 8) Final result range
     const finalCorrectStart = boxEnd - (correctFinal.length - 1);
 
     for (let c = boxStart; c <= boxEnd; c++) {
@@ -203,6 +251,7 @@ export class MulOperation {
   }
 
   // Parse "A op B" on a single row where op is one of: *, x, X, ×, ·
+  // Also detects multi-row A: if A reaches col 0 and previous row ends with a digit.
   parseAround(doc, row, opCol) {
     if (row < 0 || row >= doc.rows || opCol == null) return null;
 
@@ -221,6 +270,23 @@ export class MulOperation {
     aStart++;
     if (aStart > aEnd) return null;
 
+    // Multi-row A detection: if A reaches col 0 and previous row ends with a digit
+    let aAboveStr = '', aAboveRow = -1, aAboveStart = -1, aAboveEnd = -1;
+    if (aStart === 0 && row > 0) {
+      const lastCol = doc.cols - 1;
+      const ch = doc.getCell(row - 1, lastCol)?.char || '';
+      if (ch >= '0' && ch <= '9') {
+        aAboveRow   = row - 1;
+        aAboveEnd   = lastCol;
+        aAboveStart = aAboveEnd;
+        while (aAboveStart > 0) {
+          const c = doc.getCell(aAboveRow, aAboveStart - 1)?.char || '';
+          if (c >= '0' && c <= '9') aAboveStart--; else break;
+        }
+        aAboveStr = this.collectDigits(doc, aAboveRow, aAboveStart, aAboveEnd);
+      }
+    }
+
     // Scan right for B digits
     let bStart = opCol + 1;
     if (bStart >= doc.cols) return null;
@@ -238,7 +304,7 @@ export class MulOperation {
     const bStr = this.collectDigits(doc, row, bStart, bEnd);
     if (!aStr || !bStr) return null;
 
-    return { aStart, aEnd, bStart, bEnd, aStr, bStr };
+    return { aStart, aEnd, bStart, bEnd, aStr, bStr, aAboveStr, aAboveRow, aAboveStart, aAboveEnd };
   }
 
   collectDigits(doc, row, start, end) {
