@@ -119,8 +119,14 @@ export class AddOperation {
     const resStart        = underlineStart;
     const correctStartCol = resEnd - (correct.length - 1);
 
-    // Scratch row: one row above A for carry annotations (null when A is on row 0)
-    const scratchRow   = topRow > 0 ? topRow - 1 : null;
+    // Scratch row: one row above A for carry annotations. Null when A is on
+    // row 0, or when the row above already holds a text strip — the strip
+    // owns that row's cells and GridRenderer.scratchRows would otherwise
+    // swallow any typing there (cells stored in doc but rendered blank
+    // because scratchRows redirects updateCell to a non-existent overlay).
+    const scratchRow = (topRow > 0 && !(doc.textRows?.[topRow - 1]?.length > 0))
+      ? topRow - 1
+      : null;
     const scratchStart = spanStart;
     const scratchEnd   = endCol;
 

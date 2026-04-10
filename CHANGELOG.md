@@ -9,6 +9,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Locked result-entry mode** — Once an operation is formatted and the student
+  enters the result row, the cursor is now locked inside `[startCol, endCol]` of
+  that row. `ArrowLeft` / `ArrowRight` clamp within the range, `ArrowDown` is a
+  no-op, and any key that isn't a digit / Backspace / Enter / Escape / arrow is
+  swallowed — so a stray `+`, `-`, `*` or letter can no longer start a new
+  operation on top of the one currently being solved. Tab is also disabled while
+  a result entry is active, so the student stays on the current box until it's
+  answered, cancelled, or deleted.
+
+- **Escape cancels in-progress operation** — Pressing `Escape` during result
+  entry deletes the entire formatted block (cells, underlines, scratch
+  overlays, metadata, active state) via the new `_deleteOperationBox` helper
+  and parks the cursor at the former top-left corner. Gives the student a
+  one-keystroke exit from a wrongly-typed operation without having to manually
+  backspace every cell.
+
+- **Carry/borrow bridge from result-entry mode** — Since the cursor can no
+  longer reach operand A directly, `ArrowUp` inside result-entry now jumps
+  straight into the scratch row above A at `cursorCol + 1` (clamped into the
+  scratch range). The `+ 1` matches school-style flow: after writing a digit
+  the cursor sits one column to the left of where the carry belongs, so
+  ArrowUp lands directly on the correct scratch cell with no follow-up
+  ArrowRight. Typing one digit into the scratch overlay **auto-returns** to
+  the exact result cell the student was on (`returnRow` / `returnCol` are
+  stored at the moment of ArrowUp), so a two-carry addition like `187 + 29`
+  costs `6 ↑1 1 ↑1 2` — seven keystrokes, no explicit ArrowDowns.
+
 - **Free-text strips (text-row cells)** — Typing a letter into a cell whose
   left neighbour is empty automatically creates a text strip anchored at that
   column. The strip grows rightward as the student types, snapping to whole-cell
@@ -68,9 +95,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **`_deleteOperationBox` extracted** — The ~60-line inline locked-box teardown
+  branch in `ApplicationLogic.handleKey` moved into a private
+  `_deleteOperationBox(boxRange)` helper. It clears cells, strips
+  `result-correct` / `result-wrong` / `box-selected` / `dataset.locked`, wipes
+  the scratch row (respecting other boxes that may share the same
+  `scratchRow`), removes both underlines, calls
+  `opManager.removeRangeByBox`, nulls `opManager.active` when it pointed at
+  the deleted box, and parks the cursor at `(topRow, startCol)`. The locked-box
+  Backspace path and the new Escape-in-result-entry path both call it.
+
 - `OperationManager` now exposes an `onVerdict` callback property (default `null`)
   that fires with `'correct'` or `'wrong'` when a result row is fully evaluated.
   This keeps audio concerns out of the operation logic.
+
+### Fixed
+
+- **Scratch row no longer annexes a text strip above the operation** — Addition
+  and subtraction used to set `scratchRow = topRow - 1` unconditionally. If the
+  row above held a text strip, `GridRenderer.scratchRows` then claimed that row
+  and every `updateCell` on it got redirected into a non-existent carry
+  overlay — typing was stored in the doc but rendered blank, with the cursor
+  still advancing (the "cell-jumping" symptom). `AddOperation` and
+  `SubOperation` now set `scratchRow = null` when
+  `doc.textRows?.[topRow - 1]?.length > 0`, so operations placed directly
+  below a text strip forego carry annotations for that one box rather than
+  corrupt the strip.
+
+- **`tryResumeResultAtCursor` ignores locked ranges** — Navigating back to a
+  correctly-answered (locked) result and typing a digit used to re-enter edit
+  mode on top of the `result-correct` cells. The predicate now filters out any
+  range with `locked: true`, so locked answers stay immutable until the whole
+  box is explicitly deleted.
 
 ---
 

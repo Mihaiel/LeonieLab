@@ -122,6 +122,65 @@ export class ApplicationLogic {
       return true;
     }
 
+    // While a result entry is active the cursor is locked inside the result
+    // row. ArrowLeft/Right clamp within [startCol, endCol]; ArrowUp bridges
+    // into the carry/borrow scratch row above operand A (and ArrowDown /
+    // Enter / Escape inside scratch returns here); ArrowDown is a no-op;
+    // Escape cancels the in-progress block; any non-digit/non-Backspace/
+    // non-Enter key is swallowed so operators can't start a new op mid-entry.
+    const resultActive = this.opManager?.active?.op === 'result';
+    if (resultActive) {
+      if (key === 'ArrowLeft') {
+        const a = this.opManager.active;
+        const nc = Math.max(a.startCol, (a.cursorCol ?? a.endCol) - 1);
+        a.cursorCol = nc;
+        this.setCursor(a.row, nc);
+        return true;
+      }
+      if (key === 'ArrowRight') {
+        const a = this.opManager.active;
+        const nc = Math.min(a.endCol, (a.cursorCol ?? a.endCol) + 1);
+        a.cursorCol = nc;
+        this.setCursor(a.row, nc);
+        return true;
+      }
+      if (key === 'ArrowUp') {
+        // Bridge to the carry/borrow scratch row above operand A. Lands on
+        // (cursorCol + 1) because school-style result entry moves the cursor
+        // LEFT after each digit, so the carry belongs to the column that was
+        // JUST written — one cell to the right of the current cursor. Example
+        // "187+29": after typing '6' the cursor sits on the tens column; the
+        // carry '1' belongs above the ones column, so ArrowUp should jump
+        // straight there without a follow-up ArrowRight.
+        // The target col is clamped into the box's scratch range, so pressing
+        // ArrowUp from the rightmost position still lands on the rightmost
+        // scratch cell.
+        const a = this.opManager.active;
+        const box = a.boxRange;
+        if (box && box.scratchRow != null) {
+          const ss = box.scratchStart ?? box.startCol;
+          const se = box.scratchEnd   ?? box.endCol;
+          const cursorCol = a.cursorCol ?? a.endCol;
+          const col = Math.min(se, Math.max(ss, cursorCol + 1));
+          this.scratchMode = {
+            scratchRow: box.scratchRow,
+            aRow: box.topRow,
+            col,
+            returnRow: a.row,
+            returnCol: cursorCol,
+          };
+          this.grid?.setScratchCursor?.(box.topRow, col, true);
+        }
+        return true;
+      }
+      if (key === 'ArrowDown') return true;
+      if (key === 'Escape') {
+        this._deleteOperationBox(this.opManager.active.boxRange);
+        return true;
+      }
+      if (key !== 'Backspace' && key !== 'Enter') return true;
+    }
+
     // basic navigation + edit
     switch (key) {
       case 'Backspace':
@@ -130,65 +189,10 @@ export class ApplicationLogic {
           const a = this.opManager.active;
           if (a && a.op === 'result') this.setCursor(a.row, a.cursorCol);
         } else {
-          // If a locked box is selected, delete the whole box (all three rows in its span)
+          // If a locked box is selected, delete the whole box
           const box = this.opManager?.getLockedRangeAt?.(this.cursor.row, this.cursor.col);
           if (box && box.boxRange) {
-            const { topRow, bRow, resRow, startCol, endCol } = box.boxRange;
-            for (let r = topRow; r <= resRow; r++) {
-              for (let c = startCol; c <= endCol; c++) {
-                this.doc.setCell(r, c, '');
-                this.grid?.updateCell?.(r, c);
-                // Also strip result/lock classes on DOM nodes
-                const idx = r * this.doc.cols + c;
-                const el = this.grid?.gridEl?.children?.[idx];
-                if (el) {
-                  el.classList.remove('result-correct', 'result-wrong', 'box-selected');
-                  if (el.dataset) delete el.dataset.locked;
-                }
-              }
-            }
-            // Clear scratch row (carry/borrow annotations above A)
-            if (box.boxRange.scratchRow != null) {
-              const sr = box.boxRange.scratchRow;
-              const ss = box.boxRange.scratchStart ?? startCol;
-              const se = box.boxRange.scratchEnd ?? endCol;
-              // Clear scratch data from doc
-              for (let c = ss; c <= se; c++) {
-                this.doc.setCell(sr, c, '');
-              }
-              // Remove scratch overlays from the aRow (topRow) cells
-              for (let c = ss; c <= se; c++) {
-                const aIdx = topRow * this.doc.cols + c;
-                const aEl = this.grid?.gridEl?.children?.[aIdx];
-                if (aEl) aEl.querySelectorAll(`.scratch-overlay[data-scratch-row="${sr}"]`).forEach(ov => ov.remove());
-              }
-              // Remove from scratchRows Set if no other box uses this scratch row
-              const otherUses = (this.opManager?.resultRanges || []).filter(r =>
-                r.boxRange?.scratchRow === sr && r.boxRange !== box.boxRange
-              );
-              if (otherUses.length === 0) {
-                this.grid?.scratchRows?.delete(sr);
-              }
-            }
-            // Remove underline from the operator row.
-            // Use boxRange.underlineStart when present (Add/Sub store it explicitly
-            // because plusCol/minusCol can sit to the left of the underline start,
-            // making an exact-match removal with startCol fail).
-            const ulStart = box.boxRange?.underlineStart ?? startCol;
-            this.grid?.removeUnderline?.(bRow, ulStart, endCol);
-            // remove underline #2 if present (multiplication)
-            if (box.boxRange?.underline2Row != null) {
-              const u2r = box.boxRange.underline2Row;
-              const u2s = box.boxRange.underline2Start ?? startCol;
-              const u2e = box.boxRange.underline2End ?? endCol;
-              this.grid?.removeUnderline?.(u2r, u2s, u2e);
-            } 
-            // Remove from manager list using box identity
-            if (this.opManager?.removeRangeByBox) {
-              this.opManager.removeRangeByBox(box.boxRange);
-            }
-            // Reset selection back to cursor cell
-            this.grid?.updateCursor?.(this.cursor.row, this.cursor.col);
+            this._deleteOperationBox(box.boxRange);
           } else {
             this.erase();
           }
@@ -353,11 +357,27 @@ export class ApplicationLogic {
 
   // Handle key input while a scratch overlay is active
   _handleScratchKey(key) {
-    const { scratchRow, aRow, col } = this.scratchMode;
+    const { scratchRow, aRow, col, returnRow, returnCol } = this.scratchMode;
+
+    // Exit helper — when scratch was entered from a locked result row the
+    // cursor returns to (returnRow, returnCol), i.e. the exact result cell
+    // the student was on before pressing ArrowUp (NOT the scratch column,
+    // which sits one cell to the right). Classic scratch entry (no return
+    // fields) falls back to (aRow, col).
+    const exitScratch = () => {
+      this.grid?.setScratchCursor?.(aRow, col, false);
+      const backRow = returnRow != null ? returnRow : aRow;
+      const backCol = returnRow != null ? (returnCol ?? col) : col;
+      this.scratchMode = null;
+      this.setCursor(backRow, backCol);
+    };
 
     if (/^[0-9]$/.test(key)) {
       this.doc.setCell(scratchRow, col, key);
       this.grid?.updateCell?.(scratchRow, col);
+      // When entered from a result row, auto-return after writing one digit
+      // so the student doesn't need a follow-up ArrowDown.
+      if (returnRow != null) exitScratch();
       return true;
     }
 
@@ -368,17 +388,13 @@ export class ApplicationLogic {
         this.grid?.updateCell?.(scratchRow, col);
       } else {
         // Empty overlay — exit scratch mode without deleting anything
-        this.grid?.setScratchCursor?.(aRow, col, false);
-        this.scratchMode = null;
-        this.setCursor(aRow, col);
+        exitScratch();
       }
       return true;
     }
 
     if (key === 'ArrowDown' || key === 'Enter' || key === 'Escape') {
-      this.grid?.setScratchCursor?.(aRow, col, false);
-      this.scratchMode = null;
-      this.setCursor(aRow, col);
+      exitScratch();
       return true;
     }
 
@@ -387,7 +403,7 @@ export class ApplicationLogic {
       const scratch = this.opManager?.getScratchForCell?.(aRow, newCol);
       if (scratch && scratch.scratchRow === scratchRow) {
         this.grid?.setScratchCursor?.(aRow, col, false);
-        this.scratchMode = { scratchRow, aRow, col: newCol };
+        this.scratchMode = { scratchRow, aRow, col: newCol, returnRow, returnCol };
         this.grid?.setScratchCursor?.(aRow, newCol, true);
       }
       return true;
@@ -398,7 +414,7 @@ export class ApplicationLogic {
       const scratch = this.opManager?.getScratchForCell?.(aRow, newCol);
       if (scratch && scratch.scratchRow === scratchRow) {
         this.grid?.setScratchCursor?.(aRow, col, false);
-        this.scratchMode = { scratchRow, aRow, col: newCol };
+        this.scratchMode = { scratchRow, aRow, col: newCol, returnRow, returnCol };
         this.grid?.setScratchCursor?.(aRow, newCol, true);
       }
       return true;
@@ -482,6 +498,65 @@ export class ApplicationLogic {
     }
 
     return false;
+  }
+
+  // Delete an entire operation block (locked OR in-progress). Clears every
+  // cell inside the box, strips result/lock classes, wipes the carry/borrow
+  // scratch row, removes underlines, drops the range(s) from OperationManager,
+  // and nulls active if it pointed at this box. The cursor lands at the
+  // box's top-left corner so the student has a sensible starting point.
+  _deleteOperationBox(boxRange) {
+    if (!boxRange) return;
+    const { topRow, bRow, resRow, startCol, endCol } = boxRange;
+
+    for (let r = topRow; r <= resRow; r++) {
+      for (let c = startCol; c <= endCol; c++) {
+        this.doc.setCell(r, c, '');
+        this.grid?.updateCell?.(r, c);
+        const idx = r * this.doc.cols + c;
+        const el = this.grid?.gridEl?.children?.[idx];
+        if (el) {
+          el.classList.remove('result-correct', 'result-wrong', 'box-selected');
+          if (el.dataset) delete el.dataset.locked;
+        }
+      }
+    }
+
+    // Carry/borrow scratch row cleanup
+    if (boxRange.scratchRow != null) {
+      const sr = boxRange.scratchRow;
+      const ss = boxRange.scratchStart ?? startCol;
+      const se = boxRange.scratchEnd ?? endCol;
+      for (let c = ss; c <= se; c++) this.doc.setCell(sr, c, '');
+      for (let c = ss; c <= se; c++) {
+        const aIdx = topRow * this.doc.cols + c;
+        const aEl = this.grid?.gridEl?.children?.[aIdx];
+        if (aEl) aEl.querySelectorAll(`.scratch-overlay[data-scratch-row="${sr}"]`).forEach(ov => ov.remove());
+      }
+      const otherUses = (this.opManager?.resultRanges || []).filter(r =>
+        r.boxRange?.scratchRow === sr && r.boxRange !== boxRange
+      );
+      if (otherUses.length === 0) this.grid?.scratchRows?.delete(sr);
+    }
+
+    // Underlines (Add/Sub store underlineStart because plusCol/minusCol can
+    // sit left of the underline start, making startCol-based removal wrong).
+    const ulStart = boxRange.underlineStart ?? startCol;
+    this.grid?.removeUnderline?.(bRow, ulStart, endCol);
+    if (boxRange.underline2Row != null) {
+      const u2r = boxRange.underline2Row;
+      const u2s = boxRange.underline2Start ?? startCol;
+      const u2e = boxRange.underline2End ?? endCol;
+      this.grid?.removeUnderline?.(u2r, u2s, u2e);
+    }
+
+    // Manager cleanup + exit any in-progress result entry pointing at this box
+    if (this.opManager?.removeRangeByBox) this.opManager.removeRangeByBox(boxRange);
+    if (this.opManager?.active?.op === 'result' && this.opManager.active.boxRange === boxRange) {
+      this.opManager.active = null;
+    }
+
+    this.setCursor(topRow, startCol);
   }
 
   // Put a digit into current cell and go to next cell

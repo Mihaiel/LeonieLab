@@ -175,7 +175,7 @@
   pointer-events: none;
   white-space: pre;
   overflow: hidden;
-  z-index: 3;
+  z-index: 0;
   border-radius: 3px;
 }
 

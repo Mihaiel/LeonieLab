@@ -57,7 +57,8 @@ export class OperationManager {
 
   tryResumeResultAtCursor(row, col) {
     if (this.active && this.active.op === 'result') return true;
-    const r = this.resultRanges.find(r => r.row === row && col >= r.startCol && col <= r.endCol);
+    // Locked ranges are final — never re-enter edit mode on a correct answer.
+    const r = this.resultRanges.find(r => !r.locked && r.row === row && col >= r.startCol && col <= r.endCol);
     if (!r) return false;
     this.beginResultEntry(r);
     this.active.cursorCol = col;

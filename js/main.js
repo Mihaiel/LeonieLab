@@ -197,16 +197,20 @@ function setupWorksheet(){
     }
     }
 
-    // Tab: jump to the next unlocked result row (wraps around)
+    // Tab: jump to the next unlocked result row (wraps around). Blocked while
+    // a result entry is already active — the student is locked into that box
+    // until it's filled or cancelled via Escape.
     if (e.key === 'Tab') {
-      const unlocked = (opManager.resultRanges || []).filter(r => !r.locked);
-      if (unlocked.length > 0) {
-        unlocked.sort((a, b) => a.row - b.row || a.endCol - b.endCol);
-        const cur = logic.cursor;
-        let target = unlocked.find(r => r.row > cur.row || (r.row === cur.row && r.endCol > cur.col));
-        if (!target) target = unlocked[0]; // wrap around
-        opManager.beginResultEntry(target);
-        logic.setCursor(target.row, target.endCol);
+      if (!(opManager.active && opManager.active.op === 'result')) {
+        const unlocked = (opManager.resultRanges || []).filter(r => !r.locked);
+        if (unlocked.length > 0) {
+          unlocked.sort((a, b) => a.row - b.row || a.endCol - b.endCol);
+          const cur = logic.cursor;
+          let target = unlocked.find(r => r.row > cur.row || (r.row === cur.row && r.endCol > cur.col));
+          if (!target) target = unlocked[0]; // wrap around
+          opManager.beginResultEntry(target);
+          logic.setCursor(target.row, target.endCol);
+        }
       }
       e.preventDefault();
       return;
