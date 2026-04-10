@@ -317,6 +317,16 @@ export class ApplicationLogic {
       return true;
     }
 
+    // Equals sign — written as a literal character at the cursor so the
+    // student can hand-author their own operations (e.g. "5+3=8"). Unlike
+    // +, -, *, : it does NOT trigger the formatter and does NOT start a
+    // new operation. Absorbed inside result-entry mode by the lock guard
+    // above, so it only reaches here when the student is typing freely.
+    if (key === '=') {
+      this.typeDigit(key);
+      return true;
+    }
+
     // Letters — for units and annotations (kg, cm, km, ml, t, etc.)
     // x and X are already handled above as multiplication operators and won't reach here.
     // During result-entry mode only digits are valid, so letters are ignored there.
@@ -342,13 +352,16 @@ export class ApplicationLogic {
   }
 
   // Returns true when typing a letter should auto-create a text row.
-  // Conditions: no active operation, not on a locked block, cursor not already
-  // inside an existing strip, and the cell immediately to the left is empty.
-  // "20km" types the "k" into a cell because col-1 holds "0"; "20 km" starts
-  // a text strip at the "k" because the space at col-1 is empty.
+  // Conditions: not on a locked block, cursor not already inside an existing
+  // strip, and the cell immediately to the left is empty. The only operation
+  // state that blocks text strips is active result-entry — and that's already
+  // enforced upstream by the handleKey lock guard, which absorbs letters
+  // before they ever reach here. A pending (typed-but-not-yet-formatted) op
+  // like "530km+30km=" does NOT block strips: once the student moves to a
+  // fresh empty area of the same (or another) row, they can still start
+  // annotations. "20km" inline still types literals because col-1 holds "0".
   _shouldStartTextRow() {
     const { row, col } = this.cursor;
-    if (this.opManager?.active) return false;
     if (this.opManager?.getLockedRangeAt?.(row, col)) return false;
     if (this._findStripAt(row, col)) return false;
     if (col > 0 && this.doc.getCell(row, col - 1)?.char) return false;
