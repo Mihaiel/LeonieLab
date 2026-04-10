@@ -131,6 +131,15 @@
     font-size: calc((var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm)) / var(--cols) * 0.8) !important;
     line-height: 1 !important;
   }
+  /* Carry/borrow scratch overlays: darker and bolder than on-screen so the
+     pencil marks survive printing. Also drop the background from locked
+     result cells — the blue text colour alone signals the correct answer. */
+  .scratch-overlay{
+    color: #555 !important;
+    font-weight: 600 !important;
+  }
+  .worksheet-cell.result-correct{ background: transparent !important; }
+  .worksheet-cell.box-selected{ background: transparent !important; }
 }
 
 /* Operation visuals (needed for + formatting and results) */

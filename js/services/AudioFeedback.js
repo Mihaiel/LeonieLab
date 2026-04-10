@@ -12,6 +12,7 @@
     const audio = new AudioFeedback();
     audio.correct();   // bright high tone — answer is right
     audio.wrong();     // low dull tone   — answer is wrong
+    audio.rejected();  // tiny soft click — key was invalid / not allowed
 */
 
 export class AudioFeedback {
@@ -45,4 +46,9 @@ export class AudioFeedback {
 
   // Low A2 sawtooth — dull and brief
   wrong()   { this._tone(200, 'sawtooth', 0.30, 0.10); }
+
+  // Tiny muted click — "that key did nothing". Deliberately softer and much
+  // shorter than wrong() so a student fumbling on the keyboard doesn't get
+  // bombarded with the same tone that signals a wrong answer.
+  rejected() { this._tone(320, 'triangle', 0.05, 0.05); }
 }

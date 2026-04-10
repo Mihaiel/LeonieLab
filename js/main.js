@@ -34,6 +34,12 @@ function setupWorksheet(){
     if (verdict === 'correct') audio.correct();
     else if (verdict === 'wrong') audio.wrong();
   };
+  // Rejected-key feedback: fires whenever ApplicationLogic absorbs a key
+  // that was invalid for the current mode (non-digit in result entry,
+  // ArrowUp with no scratch row, ArrowDown in result entry, completely
+  // unrecognised key, …). Gives motor-impaired students an unmistakable
+  // "that did nothing" signal instead of silent failures.
+  logic.onRejected = () => audio.rejected();
 
   // buttons
   const q = (id) => document.getElementById(id);

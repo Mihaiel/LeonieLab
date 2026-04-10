@@ -15,6 +15,16 @@ export class ApplicationLogic {
     this.opManager = opManager; // optional; injected to keep concerns separated
     this.scratchMode = null;   // { scratchRow, aRow, col } when editing a scratch overlay
     this.textRowMode = null;   // { row, startCol, cursorPos } when editing a text strip
+    // Optional callback fired whenever a keystroke is absorbed as "rejected"
+    // (unhandled key, non-digit inside result-entry, ArrowUp with no scratch
+    // row, ArrowDown in result-entry, etc.). main.js hooks this to
+    // AudioFeedback.rejected() so students get an unmistakable "that did
+    // nothing" click instead of silent failures.
+    this.onRejected = null;
+  }
+
+  _reject() {
+    try { this.onRejected?.(); } catch (_) {}
   }
 
   // Find the text strip on (row, col), or null. Strips are identified by their
@@ -170,15 +180,18 @@ export class ApplicationLogic {
             returnCol: cursorCol,
           };
           this.grid?.setScratchCursor?.(box.topRow, col, true);
+        } else {
+          // Nothing to bridge to — no carry/borrow row for this box.
+          this._reject();
         }
         return true;
       }
-      if (key === 'ArrowDown') return true;
+      if (key === 'ArrowDown') { this._reject(); return true; }
       if (key === 'Escape') {
         this._deleteOperationBox(this.opManager.active.boxRange);
         return true;
       }
-      if (key !== 'Backspace' && key !== 'Enter') return true;
+      if (key !== 'Backspace' && key !== 'Enter') { this._reject(); return true; }
     }
 
     // basic navigation + edit
@@ -348,6 +361,9 @@ export class ApplicationLogic {
       return true;
     }
 
+    // Nothing in handleKey wanted this key — give the student an audible
+    // "that did nothing" and let main.js pop the unused undo snapshot.
+    this._reject();
     return false; // unhandled key
   }
 
