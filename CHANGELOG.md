@@ -9,6 +9,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Audio feedback on rejected keys** — A new `AudioFeedback.rejected()` tone
+  (320 Hz triangle, 50 ms, gain 0.05) fires whenever a keystroke is absorbed
+  as invalid for the current mode: unrecognised keys at the bottom of
+  `handleKey`, non-digit/non-Backspace/non-Enter/non-Escape keys swallowed by
+  the result-entry lock, `ArrowUp` in result-entry when the operation has no
+  carry row to bridge to, and `ArrowDown` in result-entry. The tone is
+  deliberately much softer and shorter than `wrong()` (which signals a wrong
+  answer) so a student fumbling the keyboard isn't bombarded with the
+  answer-wrong sound. Wired via a new `ApplicationLogic.onRejected` callback
+  that `main.js` hooks to `audio.rejected()`, mirroring the existing
+  `OperationManager.onVerdict` pattern.
+
 - **Locked result-entry mode** — Once an operation is formatted and the student
   enters the result row, the cursor is now locked inside `[startCol, endCol]` of
   that row. `ArrowLeft` / `ArrowRight` clamp within the range, `ArrowDown` is a
@@ -94,6 +106,40 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   storage fail silently.
 
 ### Changed
+
+- **PDF export renders all decorations** — `PDFExporter.saveInstant(doc)` was
+  rewritten from a thin "characters-only" rasteriser into a full worksheet
+  renderer. It now draws underlines (including multiplication's second
+  underline), locked-result digits in the app's primary blue (`#51ABEC`),
+  carry/borrow scratch overlays as bold muted text in the top-right corner of
+  each A-row cell, and text strips with their tinted fill, dashed border, and
+  clipped text (so long strips never overflow their last cell). Cells hidden
+  by a text strip are skipped in the character pass; whole scratch rows are
+  skipped because their content is rendered as overlays on the A-row. The
+  exported JPEG is embedded in a minimal one-page A4 PDF whose content
+  stream also adds a vector text header with `LeonieLab`, the grid size, and
+  the export date — no external libraries or runtime dependencies. A
+  matching `@media print` CSS block drops the locked-result background tint
+  and makes scratch overlays bolder and darker so the browser Print path
+  produces equivalent output.
+
+- **`PDFExporter` split into render + encode helpers** — The previously
+  60-line single-blob `saveInstant` method was split into
+  `_renderWorksheet(ctx, doc, cell)` (orchestrates seven ordered draw
+  passes: background, grid lines, underlines, cell chars with locked blue
+  color, scratch overlays, text strips with clipping) and
+  `_collectRenderMeta(doc)` which walks `doc.operationRanges` and
+  `doc.textRows` once to build `lockedCells`, `hiddenCells`, `scratchRows`,
+  `scratchOverlays`, and `textStrips` lookups. The existing `_jpegToPdf`,
+  `_base64ToUint8`, `_encode`, `_pad10`, `_pdfEscape` binary helpers are
+  untouched. Adding a new visual element now means adding one ordered pass
+  in `_renderWorksheet` rather than editing a monolithic loop.
+
+- `ApplicationLogic` now exposes an `onRejected` callback property (default
+  `null`) that fires whenever a keystroke is absorbed as invalid.
+  `main.js` hooks it to `AudioFeedback.rejected()`. Mirrors the existing
+  `OperationManager.onVerdict` pattern so audio concerns stay out of the
+  input state machine.
 
 - **`_deleteOperationBox` extracted** — The ~60-line inline locked-box teardown
   branch in `ApplicationLogic.handleKey` moved into a private
