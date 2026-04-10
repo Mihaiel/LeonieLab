@@ -20,7 +20,7 @@ export class DocumentService {
       underlineRanges:  doc.underlineRanges  || [],
       operationRanges:  doc.operationRanges  || [],
       textRows:         doc.textRows         || {},
-      version: 4,
+      version: 5,
     };
     return JSON.stringify(payload);
   }
@@ -37,13 +37,18 @@ export class DocumentService {
       // Restore structural ranges (version 2+); version 1 files default to empty arrays
       doc.underlineRanges = Array.isArray(data.underlineRanges) ? data.underlineRanges : [];
       doc.operationRanges = Array.isArray(data.operationRanges) ? data.operationRanges : [];
-      // v3 stored plain strings; v4 stores { text, startCol } objects — normalise on load
+      // v3: plain strings; v4: single { text, startCol } object; v5: array of strips.
+      // Normalise everything into the v5 array shape on load.
       doc.textRows = {};
       if (data.textRows && typeof data.textRows === 'object') {
         for (const [key, val] of Object.entries(data.textRows)) {
-          doc.textRows[key] = (typeof val === 'string')
-            ? { text: val, startCol: 0 }
-            : val;
+          if (Array.isArray(val)) {
+            doc.textRows[key] = val;
+          } else if (typeof val === 'string') {
+            doc.textRows[key] = [{ text: val, startCol: 0 }];
+          } else if (val && typeof val === 'object') {
+            doc.textRows[key] = [val];
+          }
         }
       }
       return true;

@@ -18,7 +18,7 @@ export class Document {
     // decorations after any full re-render (mount / renderAll).
     this.underlineRanges = [];   // [{ row, startCol, endCol }]
     this.operationRanges = [];   // same shape as OperationManager.resultRanges
-    this.textRows = {};          // { [rowIndex]: string } — full-width text rows
+    this.textRows = {};          // { [rowIndex]: Array<{ text, startCol, endCol }> } — text strips per row
   }
 
   inBounds(r, c) {
