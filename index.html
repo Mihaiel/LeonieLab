@@ -181,9 +181,12 @@
         </article>
 
         <!-- WIDE: accessibility footprint -->
-        <article class="bento-card wide" style="justify-content: start;">
-          <h3>Accessibility first</h3>
-          <p>Auto-formatting and jumping cells, audio cues, and a high-contrast color palette. Built for motor impairments, useful for anyone who benefits from structure.</p>
+        <article class="bento-card wide has-side-image" style="justify-content: start;">
+          <div class="bento-card-text">
+            <h3>Accessibility first</h3>
+            <p>Auto-formatting and jumping cells, audio cues, and a high-contrast color palette. Built for motor impairments, useful for anyone who benefits from structure.</p>
+          </div>
+          <img class="bento-side-image" src="content/img/heart.png" alt="" aria-hidden="true">
         </article>
       </div>
     </section>
@@ -198,6 +201,19 @@
       <div class="keyboard-list">
         <div class="key-row">
           <div class="keys">
+            <kbd>↑</kbd><span class="plus">·</span>
+            <kbd>→</kbd><span class="plus">·</span>
+            <kbd>↓</kbd><span class="plus">·</span>
+            <kbd>←</kbd>
+          </div>
+          <span class="desc">Move around</span>
+        </div>
+        <div class="key-row">
+          <div class="keys"><kbd>Esc</kbd></div>
+          <span class="desc">Cancel the current operation</span>
+        </div>
+        <div class="key-row">
+          <div class="keys">
             <kbd>+</kbd><span class="plus">·</span>
             <kbd>−</kbd><span class="plus">·</span>
             <kbd>×</kbd><span class="plus">·</span>
@@ -206,20 +222,12 @@
           <span class="desc">Start an operation</span>
         </div>
         <div class="key-row">
-          <div class="keys"><kbd>Enter</kbd></div>
-          <span class="desc">Format into vertical layout</span>
-        </div>
-        <div class="key-row">
           <div class="keys"><kbd>Tab</kbd></div>
           <span class="desc">Jump to next unanswered result</span>
         </div>
         <div class="key-row">
-          <div class="keys"><kbd>↑</kbd></div>
-          <span class="desc">Write a carry / borrow digit</span>
-        </div>
-        <div class="key-row">
-          <div class="keys"><kbd>Esc</kbd></div>
-          <span class="desc">Cancel the current operation</span>
+          <div class="keys"><kbd>Enter</kbd></div>
+          <span class="desc">Start calculation</span>
         </div>
         <div class="key-row">
           <div class="keys"><kbd>Ctrl</kbd><span class="plus">+</span><kbd>Z</kbd></div>
@@ -227,11 +235,11 @@
         </div>
         <div class="key-row">
           <div class="keys"><kbd>Backspace</kbd></div>
-          <span class="desc">Select and delete a locked block</span>
+          <span class="desc">Delete cell</span>
         </div>
         <div class="key-row">
           <div class="keys"><kbd>A</kbd><span class="plus">…</span><kbd>Z</kbd></div>
-          <span class="desc">Add a text strip (e.g. kg, km)</span>
+          <span class="desc">Write text</span>
         </div>
       </div>
     </section>

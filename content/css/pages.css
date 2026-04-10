@@ -282,6 +282,43 @@ section.hero-scroll{
     max-width: 32ch;
 }
 
+/* Bento card with a side image (text on the left, image pinned to the
+   right edge). The image bleeds to the card's right edge so it reads
+   as a decorative accent rather than an inline illustration. */
+.bento-card.has-side-image{
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-xl);
+    padding-right: 60px;
+}
+
+.bento-card.has-side-image .bento-card-text{
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+}
+
+.bento-card.has-side-image .bento-card-text h3{
+    margin: 0;
+}
+
+.bento-card.has-side-image .bento-card-text p{
+    margin: 0;
+    max-width: 48ch;
+}
+
+.bento-side-image{
+    flex: 0 0 auto;
+    height: 100%;
+    width: auto;
+    max-width: 30%;
+    object-fit: contain;
+    object-position: right center;
+    align-self: stretch;
+}
+
 /* Bento sizes */
 .bento-card.xl { grid-column: span 4; grid-row: span 2; }
 .bento-card.lg { grid-column: span 2; grid-row: span 2; }
@@ -536,6 +573,18 @@ section.hero-scroll{
         min-height: 200px;
     }
     .bento-card.xl{ min-height: 320px; }
+    .bento-card.has-side-image{
+        flex-direction: column;
+        align-items: stretch;
+        padding-right: var(--space-xl);
+        gap: var(--space-m);
+    }
+    .bento-side-image{
+        max-width: 140px;
+        height: auto;
+        align-self: flex-end;
+        object-position: center;
+    }
     .keyboard-list{
         grid-template-columns: 1fr;
         padding: var(--space-xl);

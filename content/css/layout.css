@@ -126,7 +126,7 @@ nav{
 /* 2. _______________ FOOTER _______________ */
 
 footer.footer{
-    margin-top: var(--space-section);
+    margin-top: 0;
     margin-left: calc(50% - 50vw);
     margin-right: calc(50% - 50vw);
     padding: var(--space-xxl) calc(50vw - 50% + var(--space-m));
