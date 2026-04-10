@@ -71,6 +71,7 @@ export class SubOperation {
     const within = (r, c) => r >= 0 && r < doc.rows && c >= 0 && c < doc.cols;
     const rowHasContent = (r, s, e) => {
       if (r < 0 || r >= doc.rows) return false;
+      if (doc.textRows && r in doc.textRows) return true;
       for (let c = s; c <= e; c++) {
         if (!within(r, c)) continue;
         if (doc.getCell(r, c)?.char) return true;

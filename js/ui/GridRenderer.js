@@ -6,6 +6,8 @@ export class GridRenderer {
     this.overlayEl = null;
     // Rows whose content lives in scratch overlays on the row below, not in their own cells
     this.scratchRows = new Set();
+    // Full-width text row overlay elements keyed by row index
+    this.textRowOverlays = {};
   }
 
   mount() {
@@ -38,6 +40,8 @@ export class GridRenderer {
     }
     this.root.appendChild(grid);
     this.gridEl = grid;
+    // Reset text row overlay tracking on fresh mount
+    this.textRowOverlays = {};
     this.applyAllDecorations();
   }
 
@@ -162,6 +166,21 @@ export class GridRenderer {
       }
     }
 
+    // Sync text row overlays with doc.textRows
+    const docTextRows = this.doc.textRows || {};
+    // Remove overlays whose rows are no longer text rows
+    for (const rStr of Object.keys(this.textRowOverlays)) {
+      const r = parseInt(rStr);
+      if (!(r in docTextRows)) this._removeTextRowOverlay(r);
+    }
+    // Add/update overlays for all current text rows
+    for (const [rStr, entry] of Object.entries(docTextRows)) {
+      const r        = parseInt(rStr);
+      const text     = typeof entry === 'string' ? entry : (entry?.text ?? '');
+      const startCol = typeof entry === 'string' ? 0     : (entry?.startCol ?? 0);
+      this.setTextRow(r, text, null, startCol);
+    }
+
     // Re-add scratch overlays on A-row cells and track scratch rows
     const seen = new Set();
     for (const range of this.doc.operationRanges) {
@@ -248,6 +267,113 @@ export class GridRenderer {
     for (let c = s; c <= e; c++) {
       const el = this.gridEl.children[row * this.doc.cols + c];
       if (el) el.classList.remove('underline');
+    }
+  }
+
+  // --- Text row helpers ---
+
+  // Create or update a text overlay for a row, anchored at startCol.
+  // The overlay starts exactly at that column and grows rightward as text is typed.
+  // cursorPos = null means display-only (no blinking caret shown).
+  setTextRow(r, str, cursorPos, startCol = 0) {
+    if (!this.gridEl) return;
+    let ov = this.textRowOverlays[r];
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.className = 'text-row-overlay';
+      this.gridEl.appendChild(ov);
+      this.textRowOverlays[r] = ov;
+    }
+    // Position: left edge anchored to startCol; max-width reaches the right edge of the grid
+    const startCell = this.gridEl.children[r * this.doc.cols + startCol];
+    const lastCell  = this.gridEl.children[r * this.doc.cols + this.doc.cols - 1];
+    if (startCell && lastCell) {
+      ov.style.left     = `${startCell.offsetLeft}px`;
+      ov.style.top      = `${startCell.offsetTop}px`;
+      ov.style.maxWidth = `${lastCell.offsetLeft + lastCell.offsetWidth - startCell.offsetLeft}px`;
+      ov.style.height   = `${startCell.offsetHeight}px`;
+      ov.style.width    = ''; // max-content via CSS; grows with text
+    }
+    this._renderTextContent(ov, str, cursorPos);
+    // Snap overlay to whole-cell boundaries and record endCol in doc
+    this._snapToGrid(r, ov, startCol);
+  }
+
+  // Public: remove a text row overlay and restore all cell visibility in that row.
+  removeTextRow(r) { this._removeTextRowOverlay(r); }
+
+  _removeTextRowOverlay(r) {
+    const ov = this.textRowOverlays[r];
+    if (ov) { ov.remove(); delete this.textRowOverlays[r]; }
+    this._showRowCells(r);
+  }
+
+  // Update only the caret position inside an existing text overlay (no reposition).
+  updateTextRowCursor(r, cursorPos) {
+    const ov = this.textRowOverlays[r];
+    if (!ov) return;
+    const entry    = this.doc.textRows?.[r];
+    const str      = entry?.text ?? (typeof entry === 'string' ? entry : '');
+    const startCol = entry?.startCol ?? 0;
+    this._renderTextContent(ov, str, cursorPos);
+    this._snapToGrid(r, ov, startCol);
+  }
+
+  // Render overlay innerHTML: text split at cursorPos with a blinking caret span.
+  _renderTextContent(ov, str, cursorPos) {
+    if (cursorPos !== null) {
+      ov.classList.add('is-active');
+      ov.innerHTML = '';
+      ov.appendChild(document.createTextNode(str.slice(0, cursorPos)));
+      const caret = document.createElement('span');
+      caret.className = 'text-row-caret';
+      ov.appendChild(caret);
+      ov.appendChild(document.createTextNode(str.slice(cursorPos)));
+    } else {
+      ov.classList.remove('is-active');
+      ov.textContent = str || '';
+    }
+  }
+
+  // Snap the overlay width to the nearest cell boundary (always covers N complete
+  // cells, never a fraction). Reads offsetWidth to trigger a synchronous reflow,
+  // then sets an explicit snapped width. Stores endCol in doc.textRows[r] so
+  // ApplicationLogic can use it for cursor-range detection without DOM access.
+  _snapToGrid(r, ov, startCol) {
+    const startCell = this.gridEl.children[r * this.doc.cols + startCol];
+    if (!startCell) return;
+
+    // Clear any previously snapped width so the browser sizes by content (max-content)
+    ov.style.width = '';
+
+    // Reading offsetWidth after clearing forces a reflow — gives the true natural size
+    const cellWidth = startCell.offsetWidth;
+    const natural   = ov.offsetWidth;
+    const style     = window.getComputedStyle(ov);
+    const paddingH  = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+    const n         = Math.max(1, Math.ceil((natural - paddingH) / cellWidth));
+    const endCol    = Math.min(startCol + n - 1, this.doc.cols - 1);
+
+    // Derive width from actual end-cell position to avoid border-width drift
+    const endCell  = this.gridEl.children[r * this.doc.cols + endCol];
+    const snapped  = endCell.offsetLeft + endCell.offsetWidth - startCell.offsetLeft;
+    ov.style.width = `${snapped}px`;
+
+    // Persist endCol so cursor checks don't need DOM access
+    const entry = this.doc.textRows?.[r];
+    if (entry && typeof entry === 'object') entry.endCol = endCol;
+
+    // Hide exactly the covered cells; show everything else in the row
+    for (let c = 0; c < this.doc.cols; c++) {
+      const el = this.gridEl.children[r * this.doc.cols + c];
+      if (el) el.style.visibility = (c >= startCol && c <= endCol) ? 'hidden' : '';
+    }
+  }
+
+  _showRowCells(r) {
+    for (let c = 0; c < this.doc.cols; c++) {
+      const el = this.gridEl.children[r * this.doc.cols + c];
+      if (el) el.style.visibility = '';
     }
   }
 }

@@ -158,3 +158,43 @@
   outline: 1px solid var(--color-primary);
   color: var(--color-primary);
 }
+
+/* Text row overlay — starts narrow, grows with content up to full row width */
+.text-row-overlay {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  min-width: 2ch;
+  padding: 0 8px;
+  font-size: 1rem;
+  color: var(--color-text);
+  background: #fffef5;
+  border: 1px dashed #ccc;
+  box-sizing: border-box;
+  pointer-events: none;
+  white-space: pre;
+  overflow: hidden;
+  z-index: 3;
+  border-radius: 3px;
+}
+
+.text-row-overlay.is-active {
+  border-color: var(--color-primary);
+  background: #f5fff8;
+}
+
+.text-row-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: var(--color-text);
+  vertical-align: text-bottom;
+  margin: 0 1px;
+  animation: text-caret-blink 1s step-end infinite;
+}
+
+@keyframes text-caret-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}

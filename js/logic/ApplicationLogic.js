@@ -13,7 +13,8 @@ export class ApplicationLogic {
     this.grid = grid; // the renderer (updates UI)
     this.cursor = { row: 0, col: 0 };
     this.opManager = opManager; // optional; injected to keep concerns separated
-    this.scratchMode = null; // { scratchRow, aRow, col } when editing a scratch overlay
+    this.scratchMode = null;   // { scratchRow, aRow, col } when editing a scratch overlay
+    this.textRowMode = null;   // { row, cursorPos } when editing a full-width text row
   }
 
   // Set starting position (top-left)
@@ -27,6 +28,11 @@ export class ApplicationLogic {
     if (this.scratchMode) {
       this.grid?.setScratchCursor?.(this.scratchMode.aRow, this.scratchMode.col, false);
       this.scratchMode = null;
+    }
+    // Exit text row mode whenever the cursor moves away
+    if (this.textRowMode) {
+      this.grid?.updateTextRowCursor?.(this.textRowMode.row, null);
+      this.textRowMode = null;
     }
     const row = Math.max(0, Math.min(this.doc.rows - 1, r));
     const col = Math.max(0, Math.min(this.doc.cols - 1, c));
@@ -44,12 +50,26 @@ export class ApplicationLogic {
     if (this.opManager && this.opManager.updateResultCursor) {
       this.opManager.updateResultCursor(row, col);
     }
+    // Auto-enter text row editing ONLY when cursor lands inside the strip's columns
+    if (this.doc.textRows && row in this.doc.textRows) {
+      const entry    = this.doc.textRows[row];
+      const startCol = entry?.startCol ?? 0;
+      const endCol   = entry?.endCol   ?? startCol;
+      if (col >= startCol && col <= endCol) {
+        const str = entry?.text ?? (typeof entry === 'string' ? entry : '');
+        this.textRowMode = { row, cursorPos: str.length };
+        this.grid?.updateTextRowCursor?.(row, str.length);
+      }
+      // Outside the strip → cursor lands on a normal visible cell, no text mode
+    }
   }
 
   // Handle a single key (called from main.js)
   handleKey(key) {
     // In scratch mode all keys are routed to the overlay handler
     if (this.scratchMode) return this._handleScratchKey(key);
+    // In text row mode all keys are routed to the text row handler
+    if (this.textRowMode) return this._handleTextRowKey(key);
     // 0-9 digits
     if (/^[0-9]$/.test(key)) {
       // If we are in a result-entry phase, let the operation manager handle leftward fill
@@ -290,16 +310,44 @@ export class ApplicationLogic {
       return true;
     }
 
-    // Letters — for units and annotations (kg, cm, km, ml, t, A:, etc.)
+    // Letters — for units and annotations (kg, cm, km, ml, t, etc.)
     // x and X are already handled above as multiplication operators and won't reach here.
     // During result-entry mode only digits are valid, so letters are ignored there.
     if (/^[a-zA-Z]$/.test(key)) {
       if (this.opManager?.active?.op === 'result') return false;
+      // Auto-detect text row: if nothing at all is to the left on this row, start a text strip
+      if (this._shouldStartTextRow()) {
+        const r   = this.cursor.row;
+        const col = this.cursor.col;
+        if (!this.doc.textRows) this.doc.textRows = {};
+        this.doc.textRows[r] = { text: key, startCol: col };
+        this.textRowMode = { row: r, cursorPos: 1 };
+        this.grid?.setTextRow?.(r, key, 1, col);
+        return true;
+      }
       this.typeDigit(key);
       return true;
     }
 
     return false; // unhandled key
+  }
+
+  // Returns true when typing a letter should auto-create a text row.
+  // Conditions: no active operation, not on a locked block, and no cell
+  // content anywhere to the left on this row (so "20km" still works normally
+  // because the digit "2" blocks text-row detection for "k").
+  _shouldStartTextRow() {
+    const { row, col } = this.cursor;
+    if (this.opManager?.active) return false;
+    if (this.opManager?.getLockedRangeAt?.(row, col)) return false;
+    // Only one text strip per row
+    if (this.doc.textRows && row in this.doc.textRows) return false;
+    // Don't trigger if any cell to the left already has content
+    // (protects "20km" — the digit "2" blocks text-row detection for "k")
+    for (let c = 0; c < col; c++) {
+      if (this.doc.getCell(row, c)?.char) return false;
+    }
+    return true;
   }
 
   // Handle key input while a scratch overlay is active
@@ -357,6 +405,76 @@ export class ApplicationLogic {
 
     if (key === 'ArrowUp') {
       return true; // already in scratch mode, absorb
+    }
+
+    return false;
+  }
+
+  // Handle key input while a text row is active
+  _handleTextRowKey(key) {
+    const { row, cursorPos } = this.textRowMode;
+    const entry    = this.doc.textRows?.[row];
+    const str      = entry?.text ?? (typeof entry === 'string' ? entry : '');
+    const startCol = entry?.startCol ?? 0;
+    const endCol   = entry?.endCol   ?? startCol;
+
+    // Treat the text strip as a single cell — all arrow keys exit and move the grid cursor
+    if (key === 'ArrowLeft') {
+      this.textRowMode = null;
+      this.grid?.updateTextRowCursor?.(row, null);
+      this.setCursor(row, startCol - 1);
+      return true;
+    }
+    if (key === 'ArrowRight') {
+      this.textRowMode = null;
+      this.grid?.updateTextRowCursor?.(row, null);
+      this.setCursor(row, endCol + 1);
+      return true;
+    }
+    if (key === 'ArrowUp') {
+      this.textRowMode = null;
+      this.grid?.updateTextRowCursor?.(row, null);
+      this.setCursor(row - 1, startCol);
+      return true;
+    }
+    if (key === 'ArrowDown' || key === 'Enter') {
+      this.textRowMode = null;
+      this.grid?.updateTextRowCursor?.(row, null);
+      this.setCursor(row + 1, startCol);
+      return true;
+    }
+    // Escape — exit without moving
+    if (key === 'Escape') {
+      this.textRowMode = null;
+      this.grid?.updateTextRowCursor?.(row, null);
+      return true;
+    }
+
+    // Backspace
+    if (key === 'Backspace') {
+      if (cursorPos > 0) {
+        const newStr = str.slice(0, cursorPos - 1) + str.slice(cursorPos);
+        this.doc.textRows[row] = { text: newStr, startCol };
+        const newPos = cursorPos - 1;
+        this.textRowMode.cursorPos = newPos;
+        this.grid?.setTextRow?.(row, newStr, newPos, startCol);
+      } else if (str.length === 0) {
+        // Empty row + Backspace at start → remove the text row
+        delete this.doc.textRows[row];
+        this.textRowMode = null;
+        this.grid?.removeTextRow?.(row);
+      }
+      return true;
+    }
+
+    // Any printable character
+    if (key.length === 1) {
+      const newStr = str.slice(0, cursorPos) + key + str.slice(cursorPos);
+      this.doc.textRows[row] = { text: newStr, startCol };
+      const newPos = cursorPos + 1;
+      this.textRowMode.cursorPos = newPos;
+      this.grid?.setTextRow?.(row, newStr, newPos, startCol);
+      return true;
     }
 
     return false;
