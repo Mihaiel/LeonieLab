@@ -377,12 +377,14 @@ export class GridRenderer {
       .reduce((min, sc) => Math.min(min, sc), this.doc.cols);
     const maxEndCol = Math.min(this.doc.cols - 1, nextStart - 1);
 
+    // Clear any previously snapped width so max-content reports the true natural size
     ov.style.width = '';
     const cellWidth = startCell.offsetWidth;
-    const natural   = ov.offsetWidth;
-    const style     = window.getComputedStyle(ov);
-    const paddingH  = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-    const n         = Math.max(1, Math.ceil((natural - paddingH) / cellWidth));
+    const natural   = ov.offsetWidth; // border-box: includes text + padding + border
+    // The overlay's whole border box must fit inside N cells (overflow:hidden
+    // would clip anything past the snapped width), so divide the full natural
+    // width — NOT natural minus padding — by cellWidth.
+    const n         = Math.max(1, Math.ceil(natural / cellWidth));
     const endCol    = Math.min(startCol + n - 1, maxEndCol);
 
     const endCell = this.gridEl.children[r * this.doc.cols + endCol];
