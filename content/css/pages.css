@@ -1,39 +1,685 @@
-/* 1. _______________ STARTPAGE _______________ */
-#main-content .intro{
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-xl);
-}
+/* ==========================================================================
+   1. LANDING PAGE (index.html)
+   ==========================================================================
 
-.intro img {
-    max-width: 90%;
-}
+   Scroll-driven hero → pull quote → bento grid → keyboard showcase → CTA.
+   The hero uses a sticky inner box driven by a JS-updated CSS variable
+   --progress (0 → 1) set on .hero-pin. Everything visual derives from it.
+   -------------------------------------------------------------------------- */
 
-#main-content .intro p{
-    font-size: var(--fs-h3);
-}
-
+/* Shared button-group helper used on the landing page and the 404. */
 .intro-buttons{
     display: flex;
-    gap: var(--space-m);
-}
-
-.features{
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: var(--space-m);
     flex-wrap: wrap;
 }
 
-/* 2. _______________ ABOUT US _______________ */
+/* ---------- Scroll-driven hero ---------- */
 
-.about-us-images {
+section.hero-scroll{
+    position: relative;
+    height: 220vh;
+    margin: 0;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+}
+
+.hero-pin{
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 50px;
+    --progress: 0;
+}
+
+/* Text content — visible at progress 0, fades out as the video grows */
+.hero-text{
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 0 var(--space-m);
+    max-width: 900px;
+    opacity: calc(1 - var(--progress) * 1.6);
+    transform: translateY(calc(var(--progress) * -40px));
+    transition: opacity 0.1s linear;
+    pointer-events: auto;
+}
+
+.hero-text[data-progress-hidden="true"]{
+    pointer-events: none;
+}
+
+.hero-eyebrow{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    margin-bottom: var(--space-xl);
+    font-size: var(--fs-small);
+    font-weight: var(--fw-medium);
+    color: var(--color-text);
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 999px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.hero-eyebrow .dot{
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    box-shadow: 0 0 10px var(--color-primary);
+}
+
+.hero-text h1{
+    font-size: clamp(2rem, min(6.5vw, 8.5vh), 5.5rem);
+    font-weight: var(--fw-bold);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    margin-bottom: var(--space-l);
+    color: var(--color-text);
+}
+
+.hero-text h1 .accent{
+    background: linear-gradient(135deg, #51ABEC 0%, #D15EFF 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.hero-text p.lead{
+    font-size: clamp(1rem, min(1.6vw, 2.2vh), 1.375rem);
+    line-height: 1.5;
+    color: var(--color-text-muted);
+    max-width: 600px;
+    margin: 0 auto var(--space-xl);
+}
+
+.hero-text .scroll-hint{
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--fs-small);
+    color: var(--color-text-muted);
+    margin-top: var(--space-l);
+}
+
+.hero-text .scroll-hint svg{
+    animation: scroll-bounce 1.8s ease-in-out infinite;
+}
+
+@keyframes scroll-bounce{
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(4px); }
+}
+
+/* The video container.
+   At progress 0: a small box anchored to the bottom of the pin, centered
+   horizontally, clamped so it never overlaps the text area above it.
+   At progress 1: inset: 0 — fills the entire viewport pin.
+   Each edge is interpolated from its small-box value down to 0. */
+.hero-video{
+    position: absolute;
+    /* Base size — capped by both vw and vh so short viewports get a
+       smaller initial video that always fits under the text. */
+    --base-w: min(28vw, 35vh);
+    --base-h: calc(var(--base-w) * 9 / 16);
+    --gap-bottom: clamp(16px, 4vh, 48px);
+    left:   calc(((100vw - var(--base-w)) / 2) * (1 - var(--progress)));
+    right:  calc(((100vw - var(--base-w)) / 2) * (1 - var(--progress)));
+    top:    calc((100vh - var(--base-h) - var(--gap-bottom)) * (1 - var(--progress)));
+    bottom: calc(var(--gap-bottom) * (1 - var(--progress)));
+    border-radius: calc(24px * (1 - var(--progress)));
+    overflow: hidden;
+    box-shadow:
+      0 calc(30px + 30px * (1 - var(--progress))) calc(80px + 40px * (1 - var(--progress))) -20px rgba(0, 0, 0, calc(0.35 * (1 - var(--progress)))),
+      0 10px 30px -10px rgba(0, 0, 0, calc(0.2 * (1 - var(--progress))));
+    background: #0a0a0c;
+    transition: box-shadow 0.1s linear;
+    z-index: 1;
+}
+
+.hero-video video{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Subtle highlight border on the small player that fades out as it grows */
+.hero-video::after{
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    pointer-events: none;
+    opacity: calc(1 - var(--progress));
+}
+
+/* Reduced motion: freeze video at a readable size, no animation */
+@media (prefers-reduced-motion: reduce){
+    section.hero-scroll{ height: auto; }
+    .hero-pin{ position: static; height: auto; padding: var(--space-section) 0; }
+    .hero-text{ opacity: 1; transform: none; }
+    .hero-video{
+        position: relative;
+        left: auto;
+        top: auto;
+        transform: none;
+        width: min(900px, 92vw);
+        margin: var(--space-xxl) auto 0;
+        border-radius: 20px;
+    }
+    .hero-video::after{ opacity: 0.5; }
+}
+
+/* ---------- Pull quote ---------- */
+
+.pull-quote{
+    padding: var(--space-section) var(--space-m);
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.pull-quote blockquote{
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    margin: 0 0 var(--space-xl);
+}
+
+.pull-quote blockquote .mark{
+    background: linear-gradient(135deg, #51ABEC 0%, #D15EFF 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.pull-quote cite{
+    font-style: normal;
+    color: var(--color-text-muted);
+    font-size: var(--fs-small);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* ---------- Bento grid ---------- */
+
+.bento-section{
+    padding: var(--space-section) 0;
+}
+
+.bento-heading{
+    text-align: center;
+    margin-bottom: var(--space-xxl);
+}
+
+.bento-heading h2{
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: var(--fw-bold);
+    letter-spacing: -0.02em;
+    margin-bottom: var(--space-s);
+}
+
+.bento-heading p{
+    color: var(--color-text-muted);
+    font-size: var(--fs-h4);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.bento{
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: 180px;
+    gap: var(--space-m);
+}
+
+.bento-card{
+    position: relative;
+    background: #fafafa;
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: var(--space-xl);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--space-s);
+}
+
+.bento-card:hover{
+    transform: translateY(-4px);
+    box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.18);
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+.bento-card h3{
+    font-size: var(--fs-h3);
+    font-weight: var(--fw-semibold);
+    letter-spacing: -0.01em;
+    margin: 0;
+}
+
+.bento-card p{
+    color: var(--color-text-muted);
+    font-size: var(--fs-small);
+    margin: 0;
+    max-width: 32ch;
+}
+
+/* Bento sizes */
+.bento-card.xl { grid-column: span 4; grid-row: span 2; }
+.bento-card.lg { grid-column: span 2; grid-row: span 2; }
+.bento-card.md { grid-column: span 3; grid-row: span 1; }
+.bento-card.sm { grid-column: span 2; grid-row: span 1; }
+.bento-card.wide { grid-column: span 6; grid-row: span 1; }
+
+/* XL card visual: mini grid hero */
+.bento-card.xl{
+    background:
+      radial-gradient(ellipse at 80% 20%, rgba(81, 171, 236, 0.18) 0%, rgba(81, 171, 236, 0) 60%),
+      radial-gradient(ellipse at 20% 80%, rgba(209, 94, 255, 0.14) 0%, rgba(209, 94, 255, 0) 60%),
+      #fafafa;
+}
+
+.bento-visual{
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.bento-mini-grid{
+    display: grid;
+    grid-template-columns: repeat(8, 28px);
+    grid-template-rows: repeat(4, 28px);
+    gap: 1px;
+    background: rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    transform: translateY(-20px);
+}
+
+.bento-mini-grid > div{
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+}
+
+.bento-mini-grid > div.op{ color: var(--color-text-muted); }
+.bento-mini-grid > div.res{ color: var(--color-primary); }
+.bento-mini-grid > div.underline{ border-bottom: 1.5px solid var(--color-text); }
+
+/* Key card: shows a big single keycap */
+.bento-card.lg .bento-visual{
+    top: var(--space-xl);
+    bottom: auto;
+    height: 60%;
+}
+
+.bento-keycap{
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 2.5rem;
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    min-width: 80px;
+    text-align: center;
+    box-shadow:
+      0 1px 0 rgba(0, 0, 0, 0.1),
+      0 4px 0 rgba(0, 0, 0, 0.06),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.04);
+    transform: rotate(-4deg);
+}
+
+/* Audio waveform card */
+.bento-waveform{
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 60px;
+}
+
+.bento-waveform span{
+    width: 4px;
+    background: var(--color-primary);
+    border-radius: 2px;
+    animation: wave 1.2s ease-in-out infinite;
+}
+
+.bento-waveform span:nth-child(1){ height: 20%; animation-delay: 0.0s; }
+.bento-waveform span:nth-child(2){ height: 60%; animation-delay: 0.1s; }
+.bento-waveform span:nth-child(3){ height: 40%; animation-delay: 0.2s; }
+.bento-waveform span:nth-child(4){ height: 80%; animation-delay: 0.3s; }
+.bento-waveform span:nth-child(5){ height: 30%; animation-delay: 0.4s; }
+.bento-waveform span:nth-child(6){ height: 70%; animation-delay: 0.5s; }
+.bento-waveform span:nth-child(7){ height: 50%; animation-delay: 0.6s; }
+.bento-waveform span:nth-child(8){ height: 90%; animation-delay: 0.7s; }
+.bento-waveform span:nth-child(9){ height: 35%; animation-delay: 0.8s; }
+.bento-waveform span:nth-child(10){ height: 55%; animation-delay: 0.9s; }
+
+@keyframes wave{
+    0%, 100% { transform: scaleY(0.5); }
+    50%      { transform: scaleY(1); }
+}
+
+/* ---------- Keyboard showcase ---------- */
+
+.keyboard-section{
+    padding: var(--space-section) 0;
+    text-align: center;
+}
+
+.keyboard-section h2{
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: var(--fw-bold);
+    letter-spacing: -0.02em;
+    margin-bottom: var(--space-s);
+}
+
+.keyboard-section .subtitle{
+    color: var(--color-text-muted);
+    font-size: var(--fs-h4);
+    max-width: 600px;
+    margin: 0 auto var(--space-xxl);
+}
+
+.keyboard-list{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-s) var(--space-xxl);
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--space-xxl);
+    background: #fafafa;
+    border: 1px solid var(--color-border);
+    border-radius: 24px;
+    text-align: left;
+}
+
+.key-row{
+    display: flex;
+    align-items: center;
+    gap: var(--space-m);
+    padding: var(--space-s) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.key-row:nth-last-child(-n+2){
+    border-bottom: none;
+}
+
+.key-row .keys{
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 150px;
+    flex-shrink: 0;
+}
+
+.key-row .desc{
+    color: var(--color-text-muted);
+    font-size: var(--fs-small);
+}
+
+.key-row .plus{
+    color: var(--color-text-muted);
+    font-size: var(--fs-xs);
+}
+
+/* ---------- CTA banner ---------- */
+
+.cta-banner{
+    position: relative;
+    padding: calc(var(--space-section) * 1.2) var(--space-m);
+    text-align: center;
+    margin: var(--space-section) calc(50% - 50vw) 0;
+    background:
+      radial-gradient(ellipse at center, #1a1a1f 0%, #0a0a0c 80%);
+    color: #fff;
+    overflow: hidden;
+}
+
+.cta-banner::before{
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(81, 171, 236, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 70% 70%, rgba(209, 94, 255, 0.25) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.cta-banner-inner{
+    position: relative;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.cta-banner h2{
+    font-size: clamp(2.25rem, 5vw, 3.75rem);
+    font-weight: var(--fw-bold);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: var(--space-m);
+}
+
+.cta-banner p{
+    font-size: var(--fs-h4);
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: var(--space-xxl);
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cta-banner .button{
+    padding: 16px 32px;
+    font-size: 1.0625rem;
+    border-radius: 12px;
+}
+
+/* ---------- Landing-page responsive ---------- */
+
+@media (max-width: 1024px){
+    .bento{
+        grid-template-columns: repeat(4, 1fr);
+        grid-auto-rows: 180px;
+    }
+    .bento-card.xl { grid-column: span 4; grid-row: span 2; }
+    .bento-card.lg { grid-column: span 2; grid-row: span 2; }
+    .bento-card.md { grid-column: span 2; grid-row: span 1; }
+    .bento-card.sm { grid-column: span 2; grid-row: span 1; }
+    .bento-card.wide { grid-column: span 4; grid-row: span 1; }
+}
+
+@media (max-width: 720px){
+    .bento{
+        grid-template-columns: 1fr;
+        grid-auto-rows: auto;
+    }
+    .bento-card,
+    .bento-card.xl,
+    .bento-card.lg,
+    .bento-card.md,
+    .bento-card.sm,
+    .bento-card.wide{
+        grid-column: span 1;
+        grid-row: span 1;
+        min-height: 200px;
+    }
+    .bento-card.xl{ min-height: 320px; }
+    .keyboard-list{
+        grid-template-columns: 1fr;
+        padding: var(--space-xl);
+    }
+    .key-row:nth-last-child(-n+2){ border-bottom: 1px solid var(--color-border); }
+    .key-row:last-child{ border-bottom: none; }
+    .hero-video{
+        /* Start a bit larger on narrow screens so the player stays readable */
+        --base-w: min(62vw, 32vh);
+    }
+}
+
+/* ==========================================================================
+   2. SHOWCASE (used on about.html for a worksheet preview figure)
+   ========================================================================== */
+
+.showcase{
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow:
+      0 40px 80px -30px rgba(0, 0, 0, 0.25),
+      0 16px 32px -16px rgba(0, 0, 0, 0.12);
+    background: #f5f5f7;
+    border: 1px solid var(--color-border);
+}
+
+.showcase video,
+.showcase img{
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* ==========================================================================
+   3. FOOTER (column layout used on every page)
+   ========================================================================== */
+
+.footer-cols{
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: var(--space-xxl);
+}
+
+.footer-brand .logo-text{
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-h4);
+    margin-bottom: var(--space-s);
+}
+
+.footer-brand p{
+    color: var(--color-text-muted);
+    font-size: var(--fs-small);
+    max-width: 280px;
+}
+
+.footer-col h4{
+    font-size: var(--fs-small);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-m);
+}
+
+.footer-col ul{
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.footer-col a{
+    color: var(--color-text);
+    font-weight: var(--fw-regular);
+    font-size: var(--fs-small);
+}
+
+.footer-col a:hover{
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.footer-bottom{
+    padding-top: var(--space-m);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--fs-small);
+    color: var(--color-text-muted);
+}
+
+@media (max-width: 900px){
+    .footer-cols{ grid-template-columns: 1fr 1fr; gap: var(--space-xl); }
+    .footer-brand{ grid-column: 1 / -1; }
+    .footer-bottom{ flex-direction: column; gap: var(--space-s); text-align: center; }
+}
+
+/* ==========================================================================
+   4. 404 PAGE
+   ========================================================================== */
+
+.not-found{
+    text-align: center;
+    padding: var(--space-section) var(--space-m);
+}
+
+.not-found .code{
+    font-size: 8rem;
+    font-weight: var(--fw-bold);
+    line-height: 1;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: var(--space-m);
+}
+
+.not-found p{
+    color: var(--color-text-muted);
+    font-size: var(--fs-h4);
+    margin-bottom: var(--space-xl);
+}
+
+.not-found .intro-buttons{
+    justify-content: center;
+}
+
+@media (max-width: 900px){
+    .not-found .code{ font-size: 5rem; }
+}
+
+/* ==========================================================================
+   5. ABOUT PAGE
+   ========================================================================== */
+
+.about-us-images{
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-l);
 }
 
-.about-us-images img {
+.about-us-images img{
     width: 100%;
     height: auto;
     display: block;
@@ -42,168 +688,153 @@
 }
 
 .about-us-image{
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-@media (max-width: 768px) {
-  #main-content .intro{
-    grid-template-columns: 1fr;
-  }
-
-  .intro img{
-    width: 100%;
-    margin: 0 auto;
-  }
-  .about-us-images {
-    grid-template-columns: 1fr;
-  }
-
-  .features{
-    grid-template-columns: 1fr;
-  }
-
-  .intro-buttons{
+    display: flex;
+    flex-direction: column;
     justify-content: center;
-  }
+    align-items: center;
 }
-/* 3. _______________ WORKSHEET GRID (basic) _______________ */
+
+@media (max-width: 768px){
+    .about-us-images{ grid-template-columns: 1fr; }
+    .intro-buttons{ justify-content: center; }
+}
+
+/* ==========================================================================
+   6. WORKSHEET GRID (worksheet.html)
+   ========================================================================== */
+
 #worksheet-root{
-  display: flex;
-  justify-content: center;
-  margin: 1rem 0 2rem;
+    display: flex;
+    justify-content: center;
+    margin: 1rem 0 2rem;
 }
 
 .worksheet-cell{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: transparent;
-  font-size: var(--fs-h2);
-  position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    font-size: var(--fs-h2);
+    position: relative;
 }
 
 .worksheet-grid{
-  border: 4px solid var(--color-text);
-}
-
-/* Make the outside border of the whole grid darker, like a document frame */
-
-
-.worksheet-cell.is-cursor{
-  outline: 2px solid var(--color-primary);
-  outline-offset: -2px;
-  z-index: 1;
+    border: 4px solid var(--color-text);
 }
 
 .worksheet-cell.is-cursor{
-  outline: 2px solid var(--color-primary);
-  outline-offset: -2px;
-  z-index: 1;
-  animation: cursor-idle 1s linear infinite;
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+    z-index: 1;
+    animation: cursor-idle 1s linear infinite;
 }
 
-@keyframes cursor-idle {
-  0% {outline: 2px solid var(--color-primary); outline-offset: -2px; }
-  50% {outline: 4px solid var(--color-primary); outline-offset: 0px; }
+@keyframes cursor-idle{
+    0%  { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+    50% { outline: 4px solid var(--color-primary); outline-offset:  0px; }
 }
 
-@media print{
-  /* margin can be overridden via CSS var if set by PDFExporter */
-  @page{ size: A4 portrait; margin: var(--print-margin-mm, 10mm); }
-  header, footer, nav, .button, button{ display: none !important; }
-  /* Keep the selected cell visible on print; just remove its outline */
-  .is-cursor{ outline: none !important; }
-    /* remove layout constraints so grid can use full printable width */
-    body.container, .container{ max-width: none !important; padding: 0 !important; margin: 0 !important; }
-    #main-content, #worksheet-root{ width: 100% !important; margin: 0 !important; padding: 0 !important; justify-content: flex-start; }
-    .worksheet-grid{
-        width: calc(var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm));
-        grid-template-columns: repeat(var(--cols), 1fr) !important;
-        grid-auto-rows: calc((var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm)) / var(--cols)) !important;
-    }
-  .worksheet-cell{
-    border: none;
-    width: auto !important;
-    height: auto !important;
-    font-size: calc((var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm)) / var(--cols) * 0.8) !important;
-    line-height: 1 !important;
-  }
-  /* Carry/borrow scratch overlays: darker and bolder than on-screen so the
-     pencil marks survive printing. Also drop the background from locked
-     result cells — the blue text colour alone signals the correct answer. */
-  .scratch-overlay{
-    color: #555 !important;
-    font-weight: 600 !important;
-  }
-  .worksheet-cell.result-correct{ background: transparent !important; }
-  .worksheet-cell.box-selected{ background: transparent !important; }
-}
-
-/* Operation visuals (needed for + formatting and results) */
+/* Operation visuals */
 .worksheet-cell.underline{ border-bottom: 1px solid #000 !important; }
 .worksheet-cell.result{ color: var(--color-primary); }
 .worksheet-cell.result-correct{ color: var(--color-primary); }
 .worksheet-cell.result-wrong{ color: var(--color-red); }
 .worksheet-cell.box-selected{ background: var(--color-primary-bg-20); }
 
-/* Carry / borrow scratch overlays — absolute-positioned on top-right of A-row digit cells */
-.scratch-overlay {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  font-size: 1rem;
-  color: #bbb;
-  line-height: 1;
-  pointer-events: none;
-  min-width: 8px;
-  text-align: center;
-  border-radius: 2px;
+/* Carry/borrow scratch overlays — absolute-positioned on top-right of A-row cells */
+.scratch-overlay{
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 1rem;
+    color: #bbb;
+    line-height: 1;
+    pointer-events: none;
+    min-width: 8px;
+    text-align: center;
+    border-radius: 2px;
 }
 
-.scratch-overlay.scratch-active {
-  outline: 1px solid var(--color-primary);
-  color: var(--color-primary);
+.scratch-overlay.scratch-active{
+    outline: 1px solid var(--color-primary);
+    color: var(--color-primary);
 }
 
 /* Text row overlay — starts narrow, grows with content up to full row width */
-.text-row-overlay {
-  position: absolute;
-  display: inline-flex;
-  align-items: center;
-  width: max-content;
-  min-width: 2ch;
-  padding: 0 8px;
-  font-size: 1rem;
-  color: var(--color-text);
-  background: #fffef5;
-  border: 1px dashed #ccc;
-  box-sizing: border-box;
-  pointer-events: none;
-  white-space: pre;
-  overflow: hidden;
-  z-index: 0;
-  border-radius: 3px;
+.text-row-overlay{
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    width: max-content;
+    min-width: 2ch;
+    padding: 0 8px;
+    font-size: 1rem;
+    color: var(--color-text);
+    background: #fffef5;
+    border: 1px dashed #ccc;
+    box-sizing: border-box;
+    pointer-events: none;
+    white-space: pre;
+    overflow: hidden;
+    z-index: 0;
+    border-radius: 3px;
 }
 
-.text-row-overlay.is-active {
-  border-color: var(--color-primary);
-  background: #f5fff8;
+.text-row-overlay.is-active{
+    border-color: var(--color-primary);
+    background: #f5fff8;
 }
 
-.text-row-caret {
-  display: inline-block;
-  width: 2px;
-  height: 1.1em;
-  background: var(--color-text);
-  vertical-align: text-bottom;
-  margin: 0 1px;
-  animation: text-caret-blink 1s step-end infinite;
+.text-row-caret{
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background: var(--color-text);
+    vertical-align: text-bottom;
+    margin: 0 1px;
+    animation: text-caret-blink 1s step-end infinite;
 }
 
-@keyframes text-caret-blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0; }
+@keyframes text-caret-blink{
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0; }
+}
+
+/* ==========================================================================
+   7. PRINT (worksheet.html export path)
+   ========================================================================== */
+
+@media print{
+    @page{ size: A4 portrait; margin: var(--print-margin-mm, 10mm); }
+    header, footer, nav, .button, button{ display: none !important; }
+    .is-cursor{ outline: none !important; }
+    body.container, .container{
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    #main-content, #worksheet-root{
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        justify-content: flex-start;
+    }
+    .worksheet-grid{
+        width: calc(var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm));
+        grid-template-columns: repeat(var(--cols), 1fr) !important;
+        grid-auto-rows: calc((var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm)) / var(--cols)) !important;
+    }
+    .worksheet-cell{
+        border: none;
+        width: auto !important;
+        height: auto !important;
+        font-size: calc((var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm)) / var(--cols) * 0.8) !important;
+        line-height: 1 !important;
+    }
+    .scratch-overlay{
+        color: #555 !important;
+        font-weight: 600 !important;
+    }
+    .worksheet-cell.result-correct{ background: transparent !important; }
+    .worksheet-cell.box-selected{ background: transparent !important; }
 }

@@ -40,3 +40,29 @@
 .button-red:hover svg path{
     fill: var(--color-bg);
 }
+
+/* ========== Keyboard key ==========
+   Physical-looking keycap used in shortcut tables and tooltips. */
+kbd{
+    display: inline-block;
+    min-width: 28px;
+    padding: 4px 8px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    box-shadow:
+      0 1px 0 rgba(0, 0, 0, 0.08),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+    text-align: center;
+    line-height: 1.2;
+}
+
+.kbd-plus{
+    color: var(--color-text-muted);
+    font-size: var(--fs-small);
+    margin: 0 2px;
+}

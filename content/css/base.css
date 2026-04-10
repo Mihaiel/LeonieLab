@@ -66,6 +66,17 @@ section{
   outline-offset: 2px;
 }
 
+/* Clip the document at the viewport edge so full-bleed elements that use
+   `margin: calc(50% - 50vw)` can't trigger a horizontal scrollbar. `50vw`
+   includes the vertical scrollbar gutter while `50%` does not, so the
+   break-out math overshoots by ~scrollbar-width on each side. Clipping at
+   `html` (which is natively viewport-wide, unlike `body.container`) hides
+   that overshoot without capping any child's actual width. `overflow: clip`
+   does not create a scroll container, so `position: sticky` still works. */
+html {
+    overflow-x: clip;
+}
+
 body {
     font-family: var(--font-sans);
     font-size: var(--fs-body);

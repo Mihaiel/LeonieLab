@@ -5,18 +5,21 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>LeonieLab Worksheet</title>
-  <meta name="description" content="Description">
+  <meta name="description" content="Keyboard-only arithmetic worksheet. Type calculations inline, press Enter to format, and solve addition, subtraction, multiplication, and division in a primary-school layout.">
   <meta name="robots" content="index, follow">
-  <link rel="icon" href="img/icon.png">
+  <link rel="icon" href="content/img/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="content/css/base.css">
   <link rel="stylesheet" href="content/css/layout.css">
   <link rel="stylesheet" href="content/css/components.css">
   <link rel="stylesheet" href="content/css/pages.css">
-  <meta property="og:title" content="LeonieLab">
-  <meta property="og:description" content="Description">
+  <meta property="og:title" content="LeonieLab Worksheet">
+  <meta property="og:description" content="Keyboard-only arithmetic worksheet for accessible math practice.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="URL">
-  <meta property="og:image" content="/assets/og-image.jpg">
+  <meta property="og:url" content="https://leonielab.mihaiel.com/worksheet.html">
+  <meta property="og:image" content="content/img/intro.png">
 </head>
 
 <body class="container">
@@ -75,14 +78,40 @@
 
   <footer class="footer">
     <div class="footer-inner">
-      <nav class="footer-nav">
-        <a href="about.html">About LeonieLab</a>
-        <a href="https://github.com/Mihaiel/LeonieLab" target="_blank">GitHub</a>
-      </nav>
-
-      <p class="footer-copyright">
-        © <span id="year"></span> leonielab.com
-      </p>
+      <div class="footer-cols">
+        <div class="footer-brand">
+          <p class="logo-text">LeonieLab</p>
+          <p>A free, open-source, keyboard-only arithmetic worksheet built for accessibility.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Project</h4>
+          <ul>
+            <li><a href="about.html">About</a></li>
+            <li><a href="worksheet.html">Open worksheet</a></li>
+            <li><a href="https://github.com/Mihaiel/LeonieLab/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></li>
+            <li><a href="https://github.com/Mihaiel/LeonieLab/releases" target="_blank" rel="noopener">Releases</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Contribute</h4>
+          <ul>
+            <li><a href="https://github.com/Mihaiel/LeonieLab" target="_blank" rel="noopener">GitHub repository</a></li>
+            <li><a href="https://github.com/Mihaiel/LeonieLab/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing guide</a></li>
+            <li><a href="https://github.com/Mihaiel/LeonieLab/blob/main/CODE_OF_CONDUCT.md" target="_blank" rel="noopener">Code of conduct</a></li>
+            <li><a href="https://github.com/Mihaiel/LeonieLab/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="https://github.com/Mihaiel/LeonieLab/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span id="year"></span> leonielab.mihaiel.com</span>
+        <span>Made with keyboards, not mice.</span>
+      </div>
     </div>
   </footer>
   <script type="module" src="js/main.js" defer></script>

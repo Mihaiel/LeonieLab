@@ -4,19 +4,22 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LeonieLab</title>
-  <meta name="description" content="Description">
+  <title>LeonieLab — Accessible Math Practice Tool</title>
+  <meta name="description" content="Free, open-source keyboard-only arithmetic worksheet designed for students with motor impairments. Practice addition, subtraction, multiplication, and division in a structured grid.">
   <meta name="robots" content="index, follow">
-  <link rel="icon" href="img/icon.png">
+  <link rel="icon" href="content/img/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="content/css/base.css">
   <link rel="stylesheet" href="content/css/layout.css">
   <link rel="stylesheet" href="content/css/components.css">
   <link rel="stylesheet" href="content/css/pages.css">
-  <meta property="og:title" content="LeonieLab">
-  <meta property="og:description" content="Description">
+  <meta property="og:title" content="LeonieLab — Accessible Math Practice Tool">
+  <meta property="og:description" content="Free, open-source keyboard-only arithmetic worksheet for students with motor impairments.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="URL">
-  <meta property="og:image" content="/assets/og-image.jpg">
+  <meta property="og:url" content="https://leonielab.mihaiel.com/">
+  <meta property="og:image" content="content/img/intro.png">
 </head>
 
 <body class="container">
@@ -35,88 +38,306 @@
         <p class="logo-text">LeonieLab</p>
       </a>
       <nav class="nav">
-        <a href="worksheet.html" class="button">Start Now</a>
+        <div class="nav-links">
+          <a href="about.html">About</a>
+          <a href="https://github.com/Mihaiel/LeonieLab" target="_blank" rel="noopener">GitHub</a>
+          <a href="worksheet.html" class="button">Start Now</a>
+        </div>
       </nav>
     </div>
   </header>
-  
+
   <main id="main-content">
-    <section class="intro">
-      <div class="intro-left-side">
-        <h1 class="color-primary">LeonieLab</h1>
-        <h2>Accessible Math Practice Tool</h2>
-        <p class="text-muted">Free, open source web application designed to help students with motor impairments practice arithmetic operations in a structured grid format.</p>
-        <div class="intro-buttons">
-          <a class="button" href="worksheet.html">Start calculating</a>
-          <a class="button button-github button-white" href="https://github.com/Mihaiel/LeonieLab" target="_blank">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M11 0C4.9225 0 0 4.9225 0 11C0 15.8675 3.14875 19.9788 7.52125 21.4363C8.07125 21.5325 8.2775 21.2025 8.2775 20.9138C8.2775 20.6525 8.26375 19.7863 8.26375 18.865C5.5 19.3738 4.785 18.1912 4.565 17.5725C4.44125 17.2562 3.905 16.28 3.4375 16.0187C3.0525 15.8125 2.5025 15.3037 3.42375 15.29C4.29 15.2762 4.90875 16.0875 5.115 16.4175C6.105 18.0812 7.68625 17.6138 8.31875 17.325C8.415 16.61 8.70375 16.1287 9.02 15.8537C6.5725 15.5787 4.015 14.63 4.015 10.4225C4.015 9.22625 4.44125 8.23625 5.1425 7.46625C5.0325 7.19125 4.6475 6.06375 5.2525 4.55125C5.2525 4.55125 6.17375 4.2625 8.2775 5.67875C9.1575 5.43125 10.0925 5.3075 11.0275 5.3075C11.9625 5.3075 12.8975 5.43125 13.7775 5.67875C15.8813 4.24875 16.8025 4.55125 16.8025 4.55125C17.4075 6.06375 17.0225 7.19125 16.9125 7.46625C17.6138 8.23625 18.04 9.2125 18.04 10.4225C18.04 14.6437 15.4688 15.5787 13.0213 15.8537C13.42 16.1975 13.7638 16.8575 13.7638 17.8888C13.7638 19.36 13.75 20.5425 13.75 20.9138C13.75 21.2025 13.9563 21.5463 14.5063 21.4363C16.69 20.6991 18.5875 19.2956 19.9318 17.4235C21.2761 15.5513 21.9994 13.3048 22 11C22 4.9225 17.0775 0 11 0Z" fill="#51ABEC"/>
+
+    <!-- =========================================================
+         HERO — scroll-driven expanding video
+         ========================================================= -->
+    <section class="hero-scroll" id="heroScroll">
+      <div class="hero-pin" id="heroPin">
+
+        <div class="hero-text" id="heroText">
+          <span class="hero-eyebrow">
+            <span class="dot"></span>
+            Free &amp; open source
+          </span>
+          <h1>
+            Math practice,<br>
+            <span class="accent">without the barriers.</span>
+          </h1>
+          <p class="lead">
+            A keyboard-only arithmetic worksheet built for students with motor impairments.
+            Type a calculation, press Enter, and solve it in a primary-school column layout.
+          </p>
+          <div class="hero-buttons intro-buttons" style="justify-content:center;">
+            <a class="button" href="worksheet.html">Start calculating</a>
+            <a class="button button-white button-github" href="https://github.com/Mihaiel/LeonieLab" target="_blank" rel="noopener">
+              <svg width="20" height="20" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 0C4.9225 0 0 4.9225 0 11C0 15.8675 3.14875 19.9788 7.52125 21.4363C8.07125 21.5325 8.2775 21.2025 8.2775 20.9138C8.2775 20.6525 8.26375 19.7863 8.26375 18.865C5.5 19.3738 4.785 18.1912 4.565 17.5725C4.44125 17.2562 3.905 16.28 3.4375 16.0187C3.0525 15.8125 2.5025 15.3037 3.42375 15.29C4.29 15.2762 4.90875 16.0875 5.115 16.4175C6.105 18.0812 7.68625 17.6138 8.31875 17.325C8.415 16.61 8.70375 16.1287 9.02 15.8537C6.5725 15.5787 4.015 14.63 4.015 10.4225C4.015 9.22625 4.44125 8.23625 5.1425 7.46625C5.0325 7.19125 4.6475 6.06375 5.2525 4.55125C5.2525 4.55125 6.17375 4.2625 8.2775 5.67875C9.1575 5.43125 10.0925 5.3075 11.0275 5.3075C11.9625 5.3075 12.8975 5.43125 13.7775 5.67875C15.8813 4.24875 16.8025 4.55125 16.8025 4.55125C17.4075 6.06375 17.0225 7.19125 16.9125 7.46625C17.6138 8.23625 18.04 9.2125 18.04 10.4225C18.04 14.6437 15.4688 15.5787 13.0213 15.8537C13.42 16.1975 13.7638 16.8575 13.7638 17.8888C13.7638 19.36 13.75 20.5425 13.75 20.9138C13.75 21.2025 13.9563 21.5463 14.5063 21.4363C16.69 20.6991 18.5875 19.2956 19.9318 17.4235C21.2761 15.5513 21.9994 13.3048 22 11C22 4.9225 17.0775 0 11 0Z" fill="#51ABEC"/>
+              </svg>
+              View on GitHub
+            </a>
+          </div>
+          <div class="scroll-hint">
+            Scroll to explore
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 11.5a.75.75 0 0 1-.53-.22l-4-4a.75.75 0 1 1 1.06-1.06L8 9.69l3.47-3.47a.75.75 0 1 1 1.06 1.06l-4 4A.75.75 0 0 1 8 11.5Z"/>
             </svg>
-            View on Github
-          </a>
+          </div>
+        </div>
+
+        <div class="hero-video" id="heroVideo">
+          <video
+            src="content/video/leonielab-showcase.mp4"
+            poster="content/img/intro.png"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            aria-label="Preview of LeonieLab worksheet in action">
+          </video>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================
+         QUOTE
+         ========================================================= -->
+    <section class="pull-quote">
+      <blockquote>
+        Built for <span class="mark">one student</span> at UAS Campus Vienna.
+        Designed to work for <span class="mark">anyone</span> who learns best
+        with a keyboard and a structured layout.
+      </blockquote>
+      <cite>— Research Project Goal</cite>
+    </section>
+
+    <!-- =========================================================
+         BENTO GRID — features
+         ========================================================= -->
+    <section class="bento-section">
+      <div class="bento-heading">
+        <h2>Built for the keyboard.</h2>
+        <p>Every interaction designed around one principle: never take your hands off the keys.</p>
+      </div>
+
+      <div class="bento">
+        <!-- XL: grid interface showcase -->
+        <article class="bento-card xl">
+          <div class="bento-visual">
+            <div class="bento-mini-grid">
+              <div></div><div></div><div></div><div></div><div class="underline">1</div><div class="underline">8</div><div class="underline">7</div><div></div>
+              <div></div><div></div><div></div><div class="op">+</div><div class="underline"></div><div class="underline">2</div><div class="underline">9</div><div></div>
+              <div></div><div></div><div></div><div></div><div class="res">2</div><div class="res">1</div><div class="res">6</div><div></div>
+              <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+            </div>
+          </div>
+          <h3>Grid-based interface</h3>
+          <p>A 24×30 cell grid that formats your calculations as you type, addition, subtraction, multiplication, and division, all in the primary-school column method.</p>
+        </article>
+
+        <!-- LG: keycap visual -->
+        <article class="bento-card lg">
+          <div class="bento-visual">
+            <div class="bento-keycap">↵</div>
+          </div>
+          <h3>Press Enter</h3>
+          <p>One keystroke reformats an inline expression into a vertical layout.</p>
+        </article>
+
+        <!-- MD: audio feedback -->
+        <article class="bento-card md">
+          <div class="bento-waveform" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <h3>Audio feedback</h3>
+          <p>Bright tones confirm correct answers, soft tones flag rejected keys.</p>
+        </article>
+
+        <!-- MD: save / export -->
+        <article class="bento-card md" style="justify-content: start;">
+          <h3>One button print &amp; export</h3>
+          <p>Plain-text sessions, one-page PDF worksheets, and browser print with a single button.</p>
+        </article>
+
+        <!-- SM: undo -->
+        <article class="bento-card sm" style="justify-content: start;">
+          <h3>Undo anywhere</h3>
+          <p><code>Ctrl + Z</code> up to 50 steps back.</p>
+        </article>
+
+        <!-- SM: auto-save -->
+        <article class="bento-card sm" style="justify-content: start;">
+          <h3>Auto-save</h3>
+          <p>Your session restores automatically on reload.</p>
+        </article>
+
+        <!-- SM: offline -->
+        <article class="bento-card sm" style="justify-content: start;">
+          <h3>Works offline</h3>
+          <p>Pure HTML, CSS, and ES modules. No server, no tracking.</p>
+        </article>
+
+        <!-- WIDE: accessibility footprint -->
+        <article class="bento-card wide" style="justify-content: start;">
+          <h3>Accessibility first</h3>
+          <p>Auto-formatting and jumping cells, audio cues, and a high-contrast color palette. Built for motor impairments, useful for anyone who benefits from structure.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         KEYBOARD SHORTCUTS
+         ========================================================= -->
+    <section class="keyboard-section">
+      <h2>Every key has a purpose.</h2>
+      <p class="subtitle">No menus, no mouse, no hunting for buttons.</p>
+
+      <div class="keyboard-list">
+        <div class="key-row">
+          <div class="keys">
+            <kbd>+</kbd><span class="plus">·</span>
+            <kbd>−</kbd><span class="plus">·</span>
+            <kbd>×</kbd><span class="plus">·</span>
+            <kbd>÷</kbd>
+          </div>
+          <span class="desc">Start an operation</span>
+        </div>
+        <div class="key-row">
+          <div class="keys"><kbd>Enter</kbd></div>
+          <span class="desc">Format into vertical layout</span>
+        </div>
+        <div class="key-row">
+          <div class="keys"><kbd>Tab</kbd></div>
+          <span class="desc">Jump to next unanswered result</span>
+        </div>
+        <div class="key-row">
+          <div class="keys"><kbd>↑</kbd></div>
+          <span class="desc">Write a carry / borrow digit</span>
+        </div>
+        <div class="key-row">
+          <div class="keys"><kbd>Esc</kbd></div>
+          <span class="desc">Cancel the current operation</span>
+        </div>
+        <div class="key-row">
+          <div class="keys"><kbd>Ctrl</kbd><span class="plus">+</span><kbd>Z</kbd></div>
+          <span class="desc">Undo the last keystroke</span>
+        </div>
+        <div class="key-row">
+          <div class="keys"><kbd>Backspace</kbd></div>
+          <span class="desc">Select and delete a locked block</span>
+        </div>
+        <div class="key-row">
+          <div class="keys"><kbd>A</kbd><span class="plus">…</span><kbd>Z</kbd></div>
+          <span class="desc">Add a text strip (e.g. kg, km)</span>
         </div>
       </div>
-      <img src="content/img/intro.png" Alt="LeonieLab Interface">
     </section>
-    <section class="features">
-      <div class="box-container">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M21 1.75C21.9665 1.75 22.75 2.5335 22.75 3.5V24.5C22.75 25.4665 21.9665 26.25 21 26.25H7C6.0335 26.25 5.25 25.4665 5.25 24.5V3.5C5.25 2.5335 6.0335 1.75 7 1.75H21ZM7 0C5.067 0 3.5 1.567 3.5 3.5V24.5C3.5 26.433 5.067 28 7 28H21C22.933 28 24.5 26.433 24.5 24.5V3.5C24.5 1.567 22.933 0 21 0H7Z" fill="#51ABEC"/>
-        <path d="M7 4.375C7 3.89175 7.39175 3.5 7.875 3.5H20.125C20.6082 3.5 21 3.89175 21 4.375V7.875C21 8.35825 20.6082 8.75 20.125 8.75H7.875C7.39175 8.75 7 8.35825 7 7.875V4.375Z" fill="#51ABEC"/>
-        <path d="M7 11.375C7 10.8918 7.39175 10.5 7.875 10.5H9.625C10.1082 10.5 10.5 10.8918 10.5 11.375V13.125C10.5 13.6082 10.1082 14 9.625 14H7.875C7.39175 14 7 13.6082 7 13.125V11.375Z" fill="#51ABEC"/>
-        <path d="M7 16.625C7 16.1418 7.39175 15.75 7.875 15.75H9.625C10.1082 15.75 10.5 16.1418 10.5 16.625V18.375C10.5 18.8582 10.1082 19.25 9.625 19.25H7.875C7.39175 19.25 7 18.8582 7 18.375V16.625Z" fill="#51ABEC"/>
-        <path d="M7 21.875C7 21.3918 7.39175 21 7.875 21H9.625C10.1082 21 10.5 21.3918 10.5 21.875V23.625C10.5 24.1082 10.1082 24.5 9.625 24.5H7.875C7.39175 24.5 7 24.1082 7 23.625V21.875Z" fill="#51ABEC"/>
-        <path d="M12.25 11.375C12.25 10.8918 12.6418 10.5 13.125 10.5H14.875C15.3582 10.5 15.75 10.8918 15.75 11.375V13.125C15.75 13.6082 15.3582 14 14.875 14H13.125C12.6418 14 12.25 13.6082 12.25 13.125V11.375Z" fill="#51ABEC"/>
-        <path d="M12.25 16.625C12.25 16.1418 12.6418 15.75 13.125 15.75H14.875C15.3582 15.75 15.75 16.1418 15.75 16.625V18.375C15.75 18.8582 15.3582 19.25 14.875 19.25H13.125C12.6418 19.25 12.25 18.8582 12.25 18.375V16.625Z" fill="#51ABEC"/>
-        <path d="M12.25 21.875C12.25 21.3918 12.6418 21 13.125 21H14.875C15.3582 21 15.75 21.3918 15.75 21.875V23.625C15.75 24.1082 15.3582 24.5 14.875 24.5H13.125C12.6418 24.5 12.25 24.1082 12.25 23.625V21.875Z" fill="#51ABEC"/>
-        <path d="M17.5 11.375C17.5 10.8918 17.8918 10.5 18.375 10.5H20.125C20.6082 10.5 21 10.8918 21 11.375V13.125C21 13.6082 20.6082 14 20.125 14H18.375C17.8918 14 17.5 13.6082 17.5 13.125V11.375Z" fill="#51ABEC"/>
-        <path d="M17.5 16.625C17.5 16.1418 17.8918 15.75 18.375 15.75H20.125C20.6082 15.75 21 16.1418 21 16.625V23.625C21 24.1082 20.6082 24.5 20.125 24.5H18.375C17.8918 24.5 17.5 24.1082 17.5 23.625V16.625Z" fill="#51ABEC"/>
-        </svg>
 
-        <h3>Grid-Based Interface</h3>
-        <p class="text-muted">Work with a structured grid that formats your 
-          calculations as you type, similar to traditional paper-based methods.</p>
-      </div>
-
-      <div class="box-container">
-      <svg style="background-color: var(--color-green-bg-20);" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M26.25 24.5C26.25 24.5 28 24.5 28 22.75C28 21 26.25 15.75 19.25 15.75C12.25 15.75 10.5 21 10.5 22.75C10.5 24.5 12.25 24.5 12.25 24.5H26.25ZM12.2891 22.75C12.283 22.7493 12.2746 22.7482 12.2643 22.7465C12.2594 22.7457 12.2547 22.7448 12.25 22.7439C12.2526 22.2818 12.542 20.9421 13.5787 19.7326C14.5483 18.6014 16.2447 17.5 19.25 17.5C22.2553 17.5 23.9516 18.6014 24.9213 19.7326C25.958 20.9421 26.2474 22.2818 26.25 22.7439C26.2453 22.7448 26.2406 22.7457 26.2357 22.7465C26.2254 22.7482 26.217 22.7493 26.2109 22.75H12.2891Z" fill="#00A12B"/>
-      <path d="M19.25 12.25C21.183 12.25 22.75 10.683 22.75 8.75C22.75 6.817 21.183 5.25 19.25 5.25C17.317 5.25 15.75 6.817 15.75 8.75C15.75 10.683 17.317 12.25 19.25 12.25ZM24.5 8.75C24.5 11.6495 22.1495 14 19.25 14C16.3505 14 14 11.6495 14 8.75C14 5.85051 16.3505 3.5 19.25 3.5C22.1495 3.5 24.5 5.85051 24.5 8.75Z" fill="#00A12B"/>
-      <path d="M12.1379 16.2399C11.4942 16.0341 10.7792 15.8844 9.98599 15.8078C9.59341 15.77 9.18169 15.75 8.75 15.75C1.75 15.75 0 21 0 22.75C0 23.9167 0.583333 24.5 1.75 24.5H9.12863C8.88223 24.0029 8.75 23.4135 8.75 22.75C8.75 20.982 9.41018 19.1765 10.6572 17.6683C11.0832 17.1531 11.5778 16.6725 12.1379 16.2399ZM8.61007 17.5008C7.56447 19.0988 7 20.9207 7 22.75H1.75C1.75 22.2937 2.03743 20.9475 3.0787 19.7326C4.0332 18.6191 5.69186 17.5344 8.61007 17.5008Z" fill="#00A12B"/>
-      <path d="M2.625 9.625C2.625 6.72551 4.9755 4.375 7.875 4.375C10.7745 4.375 13.125 6.72551 13.125 9.625C13.125 12.5245 10.7745 14.875 7.875 14.875C4.9755 14.875 2.625 12.5245 2.625 9.625ZM7.875 6.125C5.942 6.125 4.375 7.692 4.375 9.625C4.375 11.558 5.942 13.125 7.875 13.125C9.808 13.125 11.375 11.558 11.375 9.625C11.375 7.692 9.808 6.125 7.875 6.125Z" fill="#00A12B"/>
-      </svg>
-
-        <h3>Accessibility First</h3>
-        <p class="text-muted">Designed specifically for users with motor impairments, 
-          featuring minimal navigation and clear visual feedback.</p>
-      </div>
-
-      <div class="box-container">
-        <svg style="background-color: var(--color-purple-bg-20);" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M14 0C6.265 0 0 6.265 0 14C0 20.195 4.0075 25.4275 9.5725 27.2825C10.2725 27.405 10.535 26.985 10.535 26.6175C10.535 26.285 10.5175 25.1825 10.5175 24.01C7 24.6575 6.09 23.1525 5.81 22.365C5.6525 21.9625 4.97 20.72 4.375 20.3875C3.885 20.125 3.185 19.4775 4.3575 19.46C5.46 19.4425 6.2475 20.475 6.51 20.895C7.77 23.0125 9.7825 22.4175 10.5875 22.05C10.71 21.14 11.0775 20.5275 11.48 20.1775C8.365 19.8275 5.11 18.62 5.11 13.265C5.11 11.7425 5.6525 10.4825 6.545 9.5025C6.405 9.1525 5.915 7.7175 6.685 5.7925C6.685 5.7925 7.8575 5.425 10.535 7.2275C11.655 6.9125 12.845 6.755 14.035 6.755C15.225 6.755 16.415 6.9125 17.535 7.2275C20.2125 5.4075 21.385 5.7925 21.385 5.7925C22.155 7.7175 21.665 9.1525 21.525 9.5025C22.4175 10.4825 22.96 11.725 22.96 13.265C22.96 18.6375 19.6875 19.8275 16.5725 20.1775C17.08 20.615 17.5175 21.455 17.5175 22.7675C17.5175 24.64 17.5 26.145 17.5 26.6175C17.5 26.985 17.7625 27.4225 18.4625 27.2825C21.2418 26.3443 23.6568 24.5581 25.3677 22.1753C27.0786 19.7926 27.9993 16.9334 28 14C28 6.265 21.735 0 14 0Z" fill="#D15EFF"/>
-        </svg>
-        <h3>Open Source</h3>
-        <p class="text-muted">Free and open-source software. Contributions are 
-          welcome to help improve accessibility for everyone.</p>
+    <!-- =========================================================
+         CTA BANNER
+         ========================================================= -->
+    <section class="cta-banner">
+      <div class="cta-banner-inner">
+        <h2>Ready to try it?</h2>
+        <p>No account, no install, no tracking. Open the worksheet and start typing.</p>
+        <a class="button" href="worksheet.html">Open the worksheet</a>
       </div>
     </section>
+
   </main>
 
   <footer class="footer">
     <div class="footer-inner">
-      <nav class="footer-nav">
-        <a href="about.html">About LeonieLab</a>
-        <a href="https://github.com/Mihaiel/LeonieLab" target="_blank">GitHub</a>
-      </nav>
-
-      <p class="footer-copyright">
-        © <span id="year"></span> leonielab.com
-      </p>
+      <div class="footer-cols">
+        <div class="footer-brand">
+          <p class="logo-text">LeonieLab</p>
+          <p>A free, open-source, keyboard-only arithmetic worksheet built for accessibility.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Project</h4>
+          <ul>
+            <li><a href="about.html">About</a></li>
+            <li><a href="worksheet.html">Open worksheet</a></li>
+            <li><a href="https://github.com/Mihaiel/LeonieLab/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></li>
+            <li><a href="https://github.com/Mihaiel/LeonieLab/releases" target="_blank" rel="noopener">Releases</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Contribute</h4>
+          <ul>
+            <li><a href="https://github.com/Mihaiel/LeonieLab" target="_blank" rel="noopener">GitHub repository</a></li>
+            <li><a href="https://github.com/Mihaiel/LeonieLab/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing guide</a></li>
+            <li><a href="https://github.com/Mihaiel/LeonieLab/blob/main/CODE_OF_CONDUCT.md" target="_blank" rel="noopener">Code of conduct</a></li>
+            <li><a href="https://github.com/Mihaiel/LeonieLab/blob/main/SECURITY.md" target="_blank" rel="noopener">Security</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="https://github.com/Mihaiel/LeonieLab/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span id="year"></span> leonielab.mihaiel.com</span>
+        <span>Made with keyboards, not mice.</span>
+      </div>
     </div>
   </footer>
-  <script src="js/main.js" defer></script>
+
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
+
+    // -------------------------------------------------------------
+    // Scroll-driven hero: maps scroll progress through .hero-scroll
+    // onto a CSS custom property --progress (0 → 1) on .hero-pin.
+    // All visual changes (video size, radius, text fade) derive
+    // from that variable in CSS.
+    // -------------------------------------------------------------
+    (function(){
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduceMotion) return;
+
+      const section = document.getElementById('heroScroll');
+      const pin     = document.getElementById('heroPin');
+      const text    = document.getElementById('heroText');
+      if (!section || !pin) return;
+
+      let ticking = false;
+      let lastProgress = -1;
+
+      function update(){
+        ticking = false;
+        const rect = section.getBoundingClientRect();
+        const scrollable = rect.height - window.innerHeight;
+        if (scrollable <= 0) return;
+        const scrolled = Math.min(Math.max(-rect.top, 0), scrollable);
+        // Ease the raw 0-1 progress with a gentle cubic so the
+        // growth feels smoother near the start and end.
+        const raw = scrolled / scrollable;
+        const eased = raw * raw * (3 - 2 * raw); // smoothstep
+        if (Math.abs(eased - lastProgress) < 0.001) return;
+        lastProgress = eased;
+        pin.style.setProperty('--progress', eased.toFixed(4));
+        // Hide pointer events on text once it's faded out so the
+        // buttons under the growing video stay clickable.
+        if (text) text.dataset.progressHidden = eased > 0.55 ? 'true' : 'false';
+      }
+
+      function onScroll(){
+        if (!ticking){
+          requestAnimationFrame(update);
+          ticking = true;
+        }
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      update();
+    })();
   </script>
 </body>
 </html>
