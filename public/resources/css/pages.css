@@ -678,6 +678,17 @@ section.hero-scroll{
     color: var(--color-text-muted);
 }
 
+#build-info a{
+    color: var(--color-text-muted);
+    font-weight: var(--fw-regular);
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+}
+
+#build-info a:hover{
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
 @media (max-width: 900px){
     .footer-cols{ grid-template-columns: 1fr 1fr; gap: var(--space-xl); }
     .footer-brand{ grid-column: 1 / -1; }

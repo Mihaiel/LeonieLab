@@ -88,10 +88,11 @@
       </div>
       <div class="footer-bottom">
         <span>© <span id="year"></span> leonielab.mihaiel.com</span>
-        <span>Made with keyboards, not mice.</span>
+        <span id="build-info">Built locally</span>
       </div>
     </div>
   </footer>
+  <script src="/js/build-info.js" defer></script>
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
