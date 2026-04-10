@@ -9,6 +9,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Free-text strips (text-row cells)** — Typing a letter on any empty row
+  automatically creates a full-width text strip anchored at the cursor column.
+  The strip grows rightward as the student types, snapping to whole-cell
+  boundaries, and sits over the grid cells as a floating overlay with a blinking
+  caret. All printable characters are accepted (letters, digits, spaces, symbols).
+  Backspace deletes the last character; pressing it on an empty strip removes it.
+  Arrow keys and Enter exit the strip and move the grid cursor in the expected
+  direction. They survive save/open, undo and auto-save, and are excluded from 
+  arithmetic-detection so they never interfere with operation formatting.
+
 - **Carry/borrow scratch overlays** — After an addition or subtraction block is
   formatted, each digit cell of the top operand (A) shows a small placeholder in
   its top-right corner for carry or borrow annotations. Press `ArrowUp` while the
