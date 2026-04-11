@@ -145,7 +145,7 @@ export class PDFExporter {
       ctx.rect(x + 2, y + 2, w - 4, h - 4);
       ctx.clip();
       ctx.fillStyle = '#464646';
-      ctx.font = '18px sans-serif';
+      ctx.font = '24px sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(text, x + 8, y + cell / 2);
