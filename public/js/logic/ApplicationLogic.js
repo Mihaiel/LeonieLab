@@ -156,22 +156,18 @@ export class ApplicationLogic {
       }
       if (key === 'ArrowUp') {
         // Bridge to the carry/borrow scratch row above operand A. Lands on
-        // (cursorCol + 1) because school-style result entry moves the cursor
-        // LEFT after each digit, so the carry belongs to the column that was
-        // JUST written — one cell to the right of the current cursor. Example
-        // "187+29": after typing '6' the cursor sits on the tens column; the
-        // carry '1' belongs above the ones column, so ArrowUp should jump
-        // straight there without a follow-up ArrowRight.
-        // The target col is clamped into the box's scratch range, so pressing
-        // ArrowUp from the rightmost position still lands on the rightmost
-        // scratch cell.
+        // the SAME column the cursor is currently on — the carry/borrow
+        // annotation belongs above the column the student is actively
+        // working in, not one column over. After writing the scratch digit
+        // the student is returned to exactly the same result cell.
+        // The target col is clamped into the box's scratch range.
         const a = this.opManager.active;
         const box = a.boxRange;
         if (box && box.scratchRow != null) {
           const ss = box.scratchStart ?? box.startCol;
           const se = box.scratchEnd   ?? box.endCol;
           const cursorCol = a.cursorCol ?? a.endCol;
-          const col = Math.min(se, Math.max(ss, cursorCol + 1));
+          const col = Math.min(se, Math.max(ss, cursorCol));
           this.scratchMode = {
             scratchRow: box.scratchRow,
             aRow: box.topRow,
