@@ -19,21 +19,27 @@ export class AddOperation {
     // For multi-row A this is the row above typedRow; otherwise it is typedRow.
     const topRow = hasAboveA ? aAboveRow : typedRow;
 
+    // Compute the sum up-front so the result width is known before the
+    // layout is sized. The result can be 1 digit wider than either operand
+    // when there's a carry out of the top column (e.g. 50+50=100,
+    // 743+819=1562), so the underline and result range must widen to fit.
+    const correct    = (parseInt(fullAStr, 10) + parseInt(bStr, 10)).toString();
+    const maxWidth   = Math.max(fullALen, bLen, correct.length);
+
     // Unified column-shift formula.
     // Guarantees two things with a single value:
-    //   (a) operator column  = endCol - max(fullALen, bLen)  ≥ 0
-    //   (b) full A fits right-aligned to endCol              (aWriteStart ≥ 0)
-    // Both reduce to the same constraint: endCol ≥ max(fullALen, bLen).
+    //   (a) operator column  = endCol - maxWidth  ≥ 0
+    //   (b) full A fits right-aligned to endCol   (aWriteStart ≥ 0)
+    // Both reduce to the same constraint: endCol ≥ maxWidth.
     const endColRaw = aEnd;   // ones column of A on typedRow
-    const colShift  = Math.max(0, Math.max(fullALen, bLen) - endColRaw);
+    const colShift  = Math.max(0, maxWidth - endColRaw);
 
     const endCol      = endColRaw + colShift;
     const bWriteEnd   = endCol;
     const bWriteStart = endCol - (bLen - 1);
     const aWriteStart = endCol - (fullALen - 1);
-    const plusCol     = endCol - Math.max(fullALen, bLen);   // always ≥ 0
+    const plusCol     = endCol - maxWidth;   // always ≥ 0
 
-    const maxWidth       = Math.max(fullALen, bLen);
     const underlineStart = endCol - (maxWidth - 1);
     const spanStart      = Math.min(underlineStart, plusCol);
     const spanEnd        = endCol;
@@ -114,7 +120,6 @@ export class AddOperation {
     grid?.removeUnderline?.(row1, underlineStart, endCol);
     grid?.addUnderline?.(row1, underlineStart, endCol);
 
-    const correct         = (parseInt(fullAStr, 10) + parseInt(bStr, 10)).toString();
     const resEnd          = endCol;
     const resStart        = underlineStart;
     const correctStartCol = resEnd - (correct.length - 1);
