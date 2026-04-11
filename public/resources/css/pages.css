@@ -752,6 +752,8 @@ section.hero-scroll{
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap: 8px;
+    text-align: center;
 }
 
 @media (max-width: 768px){
