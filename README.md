@@ -22,41 +22,95 @@ https://github.com/user-attachments/assets/182b1579-7d9f-418a-b77e-ddc8f89b1b80
 - Based on: Software Engineering
 
 ## Architecture Overview
-- Pure client-side web application
-- HTML5 / CSS3 / JavaScript
-- Modular architecture:
-  - User Interface
-  - Application Logic
-  - Document Service
-  - Formatting Engine
-  - PDF Exporter
+- Pure client-side web application with no build step, no framework, no server runtime.
+- HTML5 / CSS3 / vanilla JavaScript (ES modules).
+- Served as static files by nginx inside Docker.
+- Modular architecture inside `public/js/`:
+  - `ui/` — grid renderer and DOM interface
+  - `logic/` — application logic and operation manager
+  - `models/` — document model (single source of truth)
+  - `operations/` — addition, subtraction, multiplication, division formatters
+  - `services/` — document I/O, PDF export, undo manager, audio feedback
 
-## How to Install
-- No build step required. This is a pure client‑side app (HTML/CSS/JS).
-- Run with any static file server so absolute paths like `/js/...` resolve.
+## Project Structure
 
-Quick options:
-- Python 3: `python3 -m http.server 8000`
-- Node (serve): `npx serve . -l 8000`
+```
+/
+├── docker-compose.yml      # nginx service definition
+├── nginx.conf              # pretty-URL routing, caching, security headers
+├── deploy.sh               # one-shot: git pull -> build.json -> restart
+└── public/                 # everything served by nginx
+    ├── index.html          # /          (landing page)
+    ├── about/index.html    # /about/
+    ├── worksheet/index.html# /worksheet/
+    ├── 404/index.html      # served via error_page
+    ├── js/                 # ES modules for the worksheet app
+    └── resources/
+        ├── css/            # base, layout, components, pages
+        ├── img/
+        └── video/
+```
 
-Then open `http://localhost:8000/content/` in your browser.
+## How to Run
+
+### Option 1 — Docker (recommended)
+Requires Docker + Docker Compose.
+
+```bash
+docker compose up -d
+```
+
+Then open `http://localhost:8082/` in your browser. The compose file mounts
+`./public` as nginx's document root and uses `./nginx.conf` for routing.
+
+### Option 2 — Any static file server
+No build step is needed. Serve the `public/` directory directly:
+
+```bash
+cd public
+python3 -m http.server 8000
+# or
+npx serve . -l 8000
+```
+
+Then open `http://localhost:8000/`. Pretty URLs (`/about/`, `/worksheet/`)
+still work because each route has its own `index.html`.
 
 Requirements:
-- Modern browser with ES modules (Chrome, Edge, Firefox, Safari current).
+- Modern browser with ES modules (Chrome, Edge, Firefox, Safari — all current).
 
 ## How to Use
-- Open `http://localhost:8000/content/` and click `Start Now`, or go directly to `http://localhost:8000/content/worksheet.html`.
-- The worksheet page renders a grid. Type digits to fill boxes; Backspace deletes; arrow keys navigate. Enter confirms formatting in some operations.
-- Use the top bar actions:
-  - `Open`: Load a previously saved worksheet from a `.txt` file.
-  - `Save`: Download the current worksheet as a timestamped `.txt` file.
-  - `Save as PDF`: Export the grid as a PDF (portrait, with margins).
-  - `Print`: Open the browser's print dialog for the worksheet.
-  - `Clear All`: Reset the grid and selections.
-- Accessibility: Large grid cells and keyboard‑first interaction support motor‑impairment friendly workflows.
+- Open the landing page and click **Start Now**, or go directly to `/worksheet/`.
+- The worksheet renders a 24×30 cell grid. Type a calculation inline
+  (`123+45`), press **Enter** to format it vertically, then type the answer
+  digit-by-digit right-to-left. Correct answers lock in blue, wrong ones
+  flash red until fixed.
+- Toolbar actions:
+  - **Open** — Load a previously saved worksheet from a `.txt` file.
+  - **Save** — Download the current worksheet as a timestamped `.txt` file.
+  - **Save as PDF** — Export the grid as a single-page A4 PDF including
+    underlines, locked result digits, scratch overlays, and text strips.
+  - **Print** — Open the browser's print dialog.
+  - **Clear All** — Reset the grid and all state.
+- Keyboard shortcuts: see the landing page, or the `Keyboard showcase`
+  section for the full list (arrow navigation, `Tab` to jump between
+  results, `↑` for carry/borrow, `Ctrl+Z` for undo, `Esc` to cancel, …).
+- Accessibility: keyboard-only input, hold-to-repeat keys, audio cues for
+  correct, wrong, and rejected keystrokes.
 
-Notes:
-- Files and routes assume the server root is the project folder. If you open `content/index.html` directly from the filesystem, absolute paths like `/js/main.js` may not load; prefer running a local server as shown above.
+## Deployment
+
+The production server pulls and redeploys with a single command:
+
+```bash
+./deploy.sh
+```
+
+`deploy.sh` runs `git pull --ff-only`, writes the current commit hash and
+timestamp into `public/resources/build.json` (which the footer fetches and
+displays as a link to the commit on GitHub), and then runs
+`docker compose up -d --remove-orphans` to restart nginx. Use
+`./deploy.sh --no-pull` to regenerate only the build info without pulling.
 
 ---
 
