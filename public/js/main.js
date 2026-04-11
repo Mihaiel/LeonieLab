@@ -155,6 +155,11 @@ function setupWorksheet(){
         opManager.divisionState = {};
         grid.renderAll();
         logic.setCursor(snap.cursor.row, snap.cursor.col);
+        // Re-enter result-entry mode if the restored cursor is inside an
+        // unlocked result range. Without this, undoing into a mid-result
+        // state leaves the cursor free to roam the document instead of
+        // being locked inside the operation box.
+        opManager.tryResumeResultAtCursor(snap.cursor.row, snap.cursor.col);
       }
       e.preventDefault();
       return;
