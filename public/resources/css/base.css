@@ -66,6 +66,26 @@ section{
   outline-offset: 2px;
 }
 
+.skip-link{
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    padding: 8px 16px;
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-small);
+    border-radius: 0 0 8px 8px;
+    z-index: 1000;
+    text-decoration: none;
+}
+
+.skip-link:focus{
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+}
+
 /* Clip the document at the viewport edge so full-bleed elements that use
    `margin: calc(50% - 50vw)` can't trigger a horizontal scrollbar. `50vw`
    includes the vertical scrollbar gutter while `50%` does not, so the

@@ -30,6 +30,7 @@
 </head>
 
 <body class="container">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <header class="header">
     <div class="header-inner">
       <a class="logo" href="/">
@@ -205,47 +206,47 @@
       <h2>Every key has a purpose.</h2>
       <p class="subtitle">No menus, no mouse, no hunting for buttons.</p>
 
-      <div class="keyboard-list">
+      <div class="keyboard-list" id="keyboardList">
         <div class="key-row">
           <div class="keys">
-            <kbd>↑</kbd><span class="plus">·</span>
-            <kbd>→</kbd><span class="plus">·</span>
-            <kbd>↓</kbd><span class="plus">·</span>
-            <kbd>←</kbd>
+            <kbd data-key="ArrowUp">↑</kbd>
+            <kbd data-key="ArrowRight">→</kbd>
+            <kbd data-key="ArrowDown">↓</kbd>
+            <kbd data-key="ArrowLeft">←</kbd>
           </div>
           <span class="desc">Move around</span>
         </div>
         <div class="key-row">
-          <div class="keys"><kbd>Esc</kbd></div>
+          <div class="keys"><kbd data-key="Escape">Esc</kbd></div>
           <span class="desc">Cancel the current operation</span>
         </div>
         <div class="key-row">
           <div class="keys">
-            <kbd>+</kbd><span class="plus">·</span>
-            <kbd>−</kbd><span class="plus">·</span>
-            <kbd>×</kbd><span class="plus">·</span>
-            <kbd>÷</kbd>
+            <kbd data-key="+">+</kbd>
+            <kbd data-key="-">−</kbd>
+            <kbd data-key="*">×</kbd>
+            <kbd data-key="/">÷</kbd>
           </div>
           <span class="desc">Start an operation</span>
         </div>
         <div class="key-row">
-          <div class="keys"><kbd>Tab</kbd></div>
+          <div class="keys"><kbd data-key="Tab">Tab</kbd></div>
           <span class="desc">Jump to next unanswered result</span>
         </div>
         <div class="key-row">
-          <div class="keys"><kbd>Enter</kbd></div>
+          <div class="keys"><kbd data-key="Enter">Enter</kbd></div>
           <span class="desc">Start calculation</span>
         </div>
         <div class="key-row">
-          <div class="keys"><kbd>Ctrl</kbd><span class="plus">+</span><kbd>Z</kbd></div>
+          <div class="keys"><kbd data-key="z" data-mod="ctrl">Ctrl</kbd><span class="plus">+</span><kbd data-key="z">Z</kbd></div>
           <span class="desc">Undo the last keystroke</span>
         </div>
         <div class="key-row">
-          <div class="keys"><kbd>Backspace</kbd></div>
+          <div class="keys"><kbd data-key="Backspace">Backspace</kbd></div>
           <span class="desc">Delete cell</span>
         </div>
         <div class="key-row">
-          <div class="keys"><kbd>A</kbd><span class="plus">…</span><kbd>Z</kbd></div>
+          <div class="keys"><kbd data-key="letter">A</kbd><span class="plus">…</span><kbd data-key="letter">Z</kbd></div>
           <span class="desc">Write text</span>
         </div>
       </div>
@@ -353,6 +354,39 @@
       window.addEventListener('scroll', onScroll, { passive: true });
       window.addEventListener('resize', onScroll);
       update();
+    })();
+
+    // -------------------------------------------------------------
+    // Keyboard showcase: animate kbd elements when their physical
+    // key is pressed anywhere on the page.
+    // -------------------------------------------------------------
+    (function(){
+      const list = document.getElementById('keyboardList');
+      if (!list) return;
+      const allKbds = list.querySelectorAll('kbd[data-key]');
+
+      function flash(el) {
+        el.classList.add('pressed');
+        clearTimeout(el._pt);
+        el._pt = setTimeout(() => el.classList.remove('pressed'), 150);
+      }
+
+      document.addEventListener('keydown', (e) => {
+        const key = e.key;
+        allKbds.forEach(kbd => {
+          const dk = kbd.dataset.key;
+          if (dk === 'z' && kbd.dataset.mod === 'ctrl' && key === 'z' && (e.ctrlKey || e.metaKey)) { flash(kbd); return; }
+          if (dk === 'z' && !kbd.dataset.mod && key === 'z' && (e.ctrlKey || e.metaKey)) { flash(kbd); return; }
+          if (dk === 'letter' && key.length === 1 && key >= 'a' && key <= 'z' && !e.ctrlKey && !e.metaKey) { flash(kbd); return; }
+          if (dk === 'letter' && key.length === 1 && key >= 'A' && key <= 'Z' && !e.ctrlKey && !e.metaKey) { flash(kbd); return; }
+          if (dk === key) flash(kbd);
+        });
+      });
+
+      // Click on a keycap triggers the same press animation
+      allKbds.forEach(kbd => {
+        kbd.addEventListener('click', () => flash(kbd));
+      });
     })();
   </script>
 </body>
