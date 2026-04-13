@@ -142,16 +142,18 @@ export class ApplicationLogic {
     if (resultActive) {
       if (key === 'ArrowLeft') {
         const a = this.opManager.active;
-        const nc = Math.max(a.startCol, (a.cursorCol ?? a.endCol) - 1);
-        a.cursorCol = nc;
-        this.setCursor(a.row, nc);
+        const cur = a.cursorCol ?? a.endCol;
+        if (cur <= a.startCol) { this._reject(); return true; }
+        a.cursorCol = cur - 1;
+        this.setCursor(a.row, a.cursorCol);
         return true;
       }
       if (key === 'ArrowRight') {
         const a = this.opManager.active;
-        const nc = Math.min(a.endCol, (a.cursorCol ?? a.endCol) + 1);
-        a.cursorCol = nc;
-        this.setCursor(a.row, nc);
+        const cur = a.cursorCol ?? a.endCol;
+        if (cur >= a.endCol) { this._reject(); return true; }
+        a.cursorCol = cur + 1;
+        this.setCursor(a.row, a.cursorCol);
         return true;
       }
       if (key === 'ArrowUp') {
@@ -357,6 +359,11 @@ export class ApplicationLogic {
       return true;
     }
 
+    // Modifier-only presses (Shift, Alt, Control, Meta, CapsLock, etc.)
+    // are not actionable — silently ignore them without rejection audio.
+    const modifiers = ['Shift','Control','Alt','Meta','CapsLock','NumLock','ScrollLock'];
+    if (modifiers.includes(key)) return false;
+
     // Nothing in handleKey wanted this key — give the student an audible
     // "that did nothing" and let main.js pop the unused undo snapshot.
     this._reject();
@@ -430,6 +437,8 @@ export class ApplicationLogic {
         this.grid?.setScratchCursor?.(aRow, col, false);
         this.scratchMode = { scratchRow, aRow, col: newCol, returnRow, returnCol };
         this.grid?.setScratchCursor?.(aRow, newCol, true);
+      } else {
+        this._reject();
       }
       return true;
     }
@@ -441,12 +450,15 @@ export class ApplicationLogic {
         this.grid?.setScratchCursor?.(aRow, col, false);
         this.scratchMode = { scratchRow, aRow, col: newCol, returnRow, returnCol };
         this.grid?.setScratchCursor?.(aRow, newCol, true);
+      } else {
+        this._reject();
       }
       return true;
     }
 
     if (key === 'ArrowUp') {
-      return true; // already in scratch mode, absorb
+      this._reject();
+      return true;
     }
 
     return false;
