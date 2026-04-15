@@ -328,12 +328,13 @@ export class ApplicationLogic {
       return true;
     }
 
-    // Equals sign — written as a literal character at the cursor so the
-    // student can hand-author their own operations (e.g. "5+3=8"). Unlike
-    // +, -, *, : it does NOT trigger the formatter and does NOT start a
-    // new operation. Absorbed inside result-entry mode by the lock guard
-    // above, so it only reaches here when the student is typing freely.
-    if (key === '=') {
+    // Equals sign and free-form punctuation — written as literal characters
+    // at the cursor so the student can hand-author their own operations
+    // (e.g. "5+3=8", "1,5", "0.25", "3+?=5"). Unlike +, -, *, : these do NOT
+    // trigger the formatter and do NOT start a new operation. Absorbed
+    // inside result-entry mode by the lock guard above, so they only reach
+    // here when the student is typing freely.
+    if (key === '=' || key === ',' || key === '.' || key === '?') {
       this.typeDigit(key);
       return true;
     }

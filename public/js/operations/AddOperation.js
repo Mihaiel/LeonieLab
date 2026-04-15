@@ -86,24 +86,31 @@ export class AddOperation {
       );
     // Check the two rows below topRow (operator+B row and result row).
     // topRow itself is not checked — it belongs to A and was just cleared above.
+    // Also check the A-row position so the whole 3-row block (A / B / result)
+    // moves together when shifting around a locked op above. Otherwise A
+    // stayed at typedRow while B+result jumped down, splitting the block
+    // visually and dumping B underneath an unrelated op's columns.
     while (
       topRow + 2 + rowShift < doc.rows &&
       (
+        intersectsLocked(topRow + rowShift) ||
         intersectsLocked(topRow + 1 + rowShift) ||
         intersectsLocked(topRow + 2 + rowShift) ||
+        rowHasContent(topRow + rowShift, spanStart, spanEnd) ||
         rowHasContent(topRow + 1 + rowShift, spanStart, spanEnd) ||
         rowHasContent(topRow + 2 + rowShift, spanStart, spanEnd)
       )
     ) {
       rowShift += 3;
     }
+    const aRow   = topRow + rowShift;
     const row1   = topRow + 1 + rowShift;
     const rowRes = topRow + 2 + rowShift;
 
-    // --- WRITE FULL A ON topRow ---
+    // --- WRITE FULL A ON aRow ---
     for (let i = 0; i < fullAStr.length; i++) {
       const c = aWriteStart + i;
-      if (doc.inBounds(topRow, c)) { doc.setCell(topRow, c, fullAStr[i]); grid?.updateCell?.(topRow, c); }
+      if (doc.inBounds(aRow, c)) { doc.setCell(aRow, c, fullAStr[i]); grid?.updateCell?.(aRow, c); }
     }
 
     // --- WRITE OPERATOR + B ON row1 ---
@@ -129,14 +136,23 @@ export class AddOperation {
     // owns that row's cells and GridRenderer.scratchRows would otherwise
     // swallow any typing there (cells stored in doc but rendered blank
     // because scratchRows redirects updateCell to a non-existent overlay).
-    const scratchRow = (topRow > 0 && !(doc.textRows?.[topRow - 1]?.length > 0))
-      ? topRow - 1
-      : null;
+    // Scratch row must be a clean row above A. Reject if it:
+    //   - holds a text strip (strip owns the row's overlay slot)
+    //   - intersects another op's box on overlapping columns (e.g. the
+    //     locked result row of an op directly above)
+    //   - has any content in the scratch column range (would be silently
+    //     swallowed by GridRenderer.scratchRows redirect)
+    const scratchCandidate = aRow - 1;
+    const scratchUsable = aRow > 0
+      && !(doc.textRows?.[scratchCandidate]?.length > 0)
+      && !intersectsLocked(scratchCandidate)
+      && !rowHasContent(scratchCandidate, spanStart, spanEnd);
+    const scratchRow = scratchUsable ? scratchCandidate : null;
     const scratchStart = spanStart;
     const scratchEnd   = endCol;
 
     // Apply scratch-carry class immediately (applyAllDecorations handles re-renders)
-    if (scratchRow != null) grid?.markScratchRow?.(scratchRow, topRow, scratchStart, scratchEnd);
+    if (scratchRow != null) grid?.markScratchRow?.(scratchRow, aRow, scratchStart, scratchEnd);
 
     return {
       resultRange: {
@@ -147,7 +163,7 @@ export class AddOperation {
         correctStartCol,
       },
       boxRange: {
-        topRow,
+        topRow: aRow,
         bRow:   row1,
         resRow: rowRes,
         startCol: spanStart,
