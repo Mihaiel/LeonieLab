@@ -1,5 +1,14 @@
+import { MultiOperandOperation } from './MultiOperandOperation.js';
+
 export class AddOperation {
   format(doc, grid, { row, anchorCol }, opManager) {
+    // Chain of 3+ operands (e.g. 3+7+4, 12+8-5) → multi-row vertical layout.
+    // Two-operand A+B falls through to the original layout below.
+    const chain = MultiOperandOperation.parseChain(doc, row, anchorCol);
+    if (chain && chain.operands.length >= 3) {
+      return new MultiOperandOperation().format(doc, grid, { row, ...chain }, opManager);
+    }
+
     const typedRow = row;
     const parsed = this.parseAround(doc, typedRow, anchorCol);
     if (!parsed) return;

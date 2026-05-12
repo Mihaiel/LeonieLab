@@ -1,15 +1,15 @@
 :root {
     --font-sans: 'Inter', system-ui, sans-serif;
     /* base text and headings */
-    --fs-h1: 3rem;          /* 48px */
-    --fs-h2: 2.25rem;       /* 36px */
-    --fs-h3: 1.5rem;        /* 24px */
-    --fs-h4: 1.25rem;       /* 20px */
+    --fs-h1: 3.6rem;        /* 57.6px */
+    --fs-h2: 2.7rem;        /* 43.2px */
+    --fs-h3: 1.8rem;        /* 28.8px */
+    --fs-h4: 1.5rem;        /* 24px */
 
-    --fs-body: 1rem;        /* 16px */
+    --fs-body: 1.2rem;      /* 19.2px */
 
-    --fs-small: 0.875rem;   /* 14px */
-    --fs-xs: 0.75rem;       /* 12px */
+    --fs-small: 1.05rem;    /* 16.8px */
+    --fs-xs: 0.9rem;        /* 14.4px */
     --fw-regular: 400;
     --fw-medium: 500;
     --fw-semibold: 600;

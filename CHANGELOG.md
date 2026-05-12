@@ -9,6 +9,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Multi-operand `+` / `-` chains** — Typing three or more numbers joined by
+  `+` and `-` on the same row (e.g. `3+7+4`, `300-150-27+40`, mixed signs in
+  any order) and pressing Enter now formats the whole chain as an N+1-row
+  vertical block: one row per operand (sign in its own column, digits
+  right-aligned), an underline beneath the last operand, and a single result
+  row at the bottom. Negative sums pre-fill a minus to the left of the
+  result row just like two-operand subtraction. Carry/borrow scratch
+  overlays attach above the first operand row using the same text-strip /
+  locked-box guards as Add/Sub. Implemented in a new
+  `MultiOperandOperation` strategy that `AddOperation` and `SubOperation`
+  delegate to whenever `parseChain` finds ≥3 operands; two-operand `A+B` /
+  `A-B` continue to use their original layout untouched. The returned
+  `boxRange` keeps the existing `{ topRow, bRow, resRow, … }` shape so
+  delete-with-Backspace, undo, save/open, and PDF export all keep working
+  with no further changes. Previously a typed chain like `3+7+4` would
+  silently format as `7+4` and orphan the leading `3+` on the input row.
+
+- **Parentheses and brackets as free-form characters** — `(`, `)`, `[`, `]`
+  now type into cells as literal characters alongside the existing
+  free-form set (`=`, `,`, `.`, `?`). They don't trigger any formatter, so
+  students can hand-author expressions like `(2+3)·4` or `[1,5]` without
+  the keystroke being absorbed as a rejection or starting an operation.
+  Inside an active result-entry box they remain blocked by the lock guard,
+  same as every other non-digit key.
+
 - **Audio feedback on rejected keys** — A new `AudioFeedback.rejected()` tone
   (320 Hz triangle, 50 ms, gain 0.05) fires whenever a keystroke is absorbed
   as invalid for the current mode: unrecognised keys at the bottom of
@@ -106,6 +131,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   storage fail silently.
 
 ### Changed
+
+- **Larger default font sizes (~20%)** — Bumped every `--fs-*` CSS variable
+  in `base.css` by 1.2× (h1 3→3.6rem, h2 2.25→2.7rem, h3 1.5→1.8rem,
+  h4 1.25→1.5rem, body 1→1.2rem, small 0.875→1.05rem, xs 0.75→0.9rem).
+  Since `.worksheet-cell` uses `var(--fs-h2)`, the digit glyphs inside
+  grid cells grow with it; landing-page headings, body copy, and toolbar
+  labels follow suit. Worksheet-specific literal sizes were bumped to
+  match: `.scratch-overlay` (1→1.2rem) and `.text-row-overlay`
+  (1.5→1.8rem). Print mode is unaffected because its cell font-size is a
+  `calc()` derived from page width. The `clamp(…vw…)` hero sizes on the
+  landing/about pages were intentionally left alone — they already scale
+  with viewport.
 
 - **PDF export renders all decorations** — `PDFExporter.saveInstant(doc)` was
   rewritten from a thin "characters-only" rasteriser into a full worksheet

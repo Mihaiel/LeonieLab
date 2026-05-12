@@ -835,7 +835,7 @@ section.hero-scroll{
     position: absolute;
     top: 2px;
     right: 2px;
-    font-size: 1rem;
+    font-size: 1.2rem;
     color: #bbb;
     line-height: 1;
     pointer-events: none;
@@ -857,7 +857,7 @@ section.hero-scroll{
     width: max-content;
     min-width: 2ch;
     padding: 0 8px;
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     color: var(--color-text);
     background: #fffef5;
     border: 1px dashed #ccc;
