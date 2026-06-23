@@ -1048,8 +1048,11 @@ section.hero-scroll{
     cursor: pointer;
 }
 .settings-value{
-    flex: 0 0 auto;
-    min-width: 3.6em;
+    /* Fixed width (not min-width) so the readout never resizes as the value
+       changes (e.g. "48 px" → "1.15 rem"); otherwise the flexible slider beside
+       it would jitter while dragging. Wide enough for the longest value. */
+    flex: 0 0 5em;
+    width: 5em;
     text-align: right;
     font-variant-numeric: tabular-nums;
     color: var(--color-text-muted);
@@ -1091,7 +1094,7 @@ section.hero-scroll{
 .settings-swatch::-moz-color-swatch{ border: none; border-radius: 5px; }
 
 /* macOS-style toggle switch (checkbox under a custom track) */
-.settings-toggle{ position: relative; display: inline-flex; width: 44px; height: 26px; flex: 0 0 auto; }
+.settings-toggle{ position: relative; display: inline-flex; width: 44px; height: 26px; flex: 0 0 auto; cursor: pointer; }
 .settings-toggle input{ position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; z-index: 1; }
 .settings-toggle-track{
     position: absolute; inset: 0;
