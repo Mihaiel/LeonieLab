@@ -805,6 +805,7 @@ section.hero-scroll{
     background: transparent;
     font-size: var(--fs-h2);
     position: relative;
+    cursor: pointer; /* affordance: cells are click/tap selectable */
 }
 
 .worksheet-grid{
@@ -862,7 +863,10 @@ section.hero-scroll{
     background: #fffef5;
     border: 1px dashed #ccc;
     box-sizing: border-box;
-    pointer-events: none;
+    /* Clickable so a tap/click on a strip selects it (it covers hidden cells,
+       which can't be click targets). The grid cursor enters text-row edit mode. */
+    pointer-events: auto;
+    cursor: pointer;
     white-space: pre;
     overflow: hidden;
     z-index: 0;

@@ -307,6 +307,11 @@ export class GridRenderer {
     if (!ov) {
       ov = document.createElement('div');
       ov.className = 'text-row-overlay';
+      // Tagged so the click-to-select handler in main.js can map a click on
+      // the overlay back to its grid coordinates (strips cover hidden cells,
+      // so the cell beneath is not a usable click target).
+      ov.dataset.r = String(r);
+      ov.dataset.startCol = String(startCol);
       this.gridEl.appendChild(ov);
       this.textRowOverlays[key] = ov;
     }

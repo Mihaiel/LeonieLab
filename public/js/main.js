@@ -144,6 +144,29 @@ function setupWorksheet(){
     });
   }
 
+  // Mouse / touch: click (or tap) a cell to move the cursor there.
+  // A tap on a touchscreen fires a synthetic click, so this single handler
+  // covers both pointing devices. NOTE: this only handles cell *selection* —
+  // typing digits/operators still requires a physical keyboard, since the app
+  // has no on-screen keyboard. Delegated on `root` (which survives mount /
+  // open re-renders) rather than on the grid element (recreated each mount).
+  root.addEventListener('click', (e) => {
+    // Scratch overlays have pointer-events:none, so a click on one resolves to
+    // its parent .worksheet-cell here — selecting the underlying A-row cell.
+    const cell = e.target.closest('.worksheet-cell');
+    if (cell && cell.dataset.r != null && cell.dataset.c != null) {
+      logic.setCursor(parseInt(cell.dataset.r, 10), parseInt(cell.dataset.c, 10));
+      return;
+    }
+    // Text-strip overlays are siblings of the cells (they cover hidden cells),
+    // so they need their own lookup. Landing on a strip's start column makes
+    // setCursor auto-enter text-row edit mode.
+    const strip = e.target.closest('.text-row-overlay');
+    if (strip && strip.dataset.r != null && strip.dataset.startCol != null) {
+      logic.setCursor(parseInt(strip.dataset.r, 10), parseInt(strip.dataset.startCol, 10));
+    }
+  });
+
   // Keyboard input
     document.addEventListener('keydown', (e) => {
     // Undo: Ctrl+Z / Cmd+Z — handled before the meta guard below
