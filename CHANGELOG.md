@@ -9,6 +9,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **`Tab` / `Shift`+`Tab` cursor movement + row-wrapping navigation** — `Tab`
+  now moves the cursor one cell to the **right** and `Shift`+`Tab` one cell to
+  the **left**. Both inherit the arrow keys' new **row-wrapping**: moving right
+  past the last column lands on column 0 of the next row, and moving left from
+  column 0 lands on the last column of the previous row
+  (`ApplicationLogic.moveLeft` / `moveRight`); the cursor stays put at the very
+  first `(0,0)` and last cell (no wrap off the top/bottom). `main.js` normalises
+  Tab → `ArrowRight` and Shift+Tab → `ArrowLeft` before dispatch, so Tab reuses
+  every existing arrow path — locked-box exit, result-entry clamp, and the plain
+  wrapping move — and always calls `preventDefault` so focus can't leave the
+  worksheet. **Replaces** the previous `Tab` behaviour, which jumped to the next
+  unanswered result row and auto-entered result-entry mode; that can be rebound
+  to another key or a button if still wanted.
+
 - **Unit exponents (m², cm², mⁿ)** — Inline units now support a superscript
   exponent, entered with the same ArrowUp gesture as carry/borrow scratch.
   Pressing `ArrowUp` (or the `^` key) on the **final letter** of a recognised
@@ -155,12 +169,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   results. Implemented via the Web Audio API in `js/services/AudioFeedback.js`;
   triggered through an `onVerdict` hook on `OperationManager`.
 
-- **Tab navigation between result rows** - Pressing Tab jumps the cursor directly
-  to the next unanswered result row on the worksheet, skipping already-completed
-  and empty areas. Wraps back to the first unlocked result when the end is reached.
-  Activates result-entry mode immediately so the student can start typing without
-  further navigation.
-
 - **Hold-to-repeat arrow keys** — Holding an arrow key now moves the cursor
   continuously, matching the same hold-to-erase behaviour of backspace.
 
@@ -180,6 +188,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   storage fail silently.
 
 ### Changed
+
+- **JS/CSS assets revalidate instead of caching for 7 days** — `nginx.conf`
+  served `.css`/`.js`/image/font files with `expires 7d; Cache-Control public`
+  and **no** revalidation, so edited (non-hashed) modules could stay stale in
+  the browser for up to a week after a deploy. The rule now sends
+  `Cache-Control: no-cache`, which still stores the file but forces a
+  conditional request each load — answered by a cheap `304 Not Modified` (via
+  nginx's auto ETag / Last-Modified) when unchanged, or the fresh file the
+  moment it changes. Matches the config comment's original stated intent.
 
 - **Larger default font sizes (~20%)** — Bumped every `--fs-*` CSS variable
   in `base.css` by 1.2× (h1 3→3.6rem, h2 2.25→2.7rem, h3 1.5→1.8rem,
