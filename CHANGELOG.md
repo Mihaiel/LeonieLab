@@ -9,6 +9,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Settings system** — A new **⚙ Settings** toolbar button opens a native
+  `<dialog>` modal for adjusting the worksheet. Configurable: grid **rows** and
+  **columns**, on-screen **cell size**, **digit font**, **carry/borrow (scratch)
+  font**, **unit-exponent font**, **text-strip font**, **carry/borrow text
+  color**, **unit-exponent text color**, a **sound feedback** on/off toggle, and
+  a **reduce-motion** toggle (disables the pulsing cursor + modal animation).
+  Plus **Reset to defaults**. Implemented in a new `SettingsService`
+  (`js/services/SettingsService.js`) that is the single source of truth, persists
+  to its own `leonielab_settings` localStorage key (separate from the autosave),
+  clamps every numeric value to safe limits on load/set, and applies preferences
+  two ways: visual settings as CSS custom properties on `:root` (instant, no
+  rebuild — four `--fs-*` and two `--color-*` vars, see Changed), and structural
+  settings via `GridRenderer.cellSize` + a `Document` resize. **Rows/columns may
+  only change while the worksheet is empty** (the inputs are disabled with a note
+  otherwise), so a resize never discards a student's work; cell-size/fonts/colors
+  apply anytime. The global keydown handler is short-circuited (`if (dlg.open)
+  return;`) while the modal is open so digits/arrows/Backspace/Tab reach the form
+  inputs instead of the grid. `AudioFeedback` gained an `enabled` flag; PDF export
+  (`PDFExporter.saveInstant(doc, cellSize)`) now renders at the configured cell
+  size with proportionally-scaled glyph fonts. Settings apply before first paint
+  on load; a restored autosaved worksheet remains authoritative for its own
+  geometry.
+
 - **`Tab` / `Shift`+`Tab` cursor movement + row-wrapping navigation** — `Tab`
   now moves the cursor one cell to the **right** and `Shift`+`Tab` one cell to
   the **left**. Both inherit the arrow keys' new **row-wrapping**: moving right
@@ -188,6 +211,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   storage fail silently.
 
 ### Changed
+
+- **Worksheet font-sizes & annotation colors are now CSS variables** — To let
+  the Settings system override them at runtime, the digit/scratch/unit-exponent/
+  text-strip font-sizes and the scratch & unit-exponent text colors were lifted
+  out of literal CSS values into `:root` custom properties in `base.css`
+  (`--fs-worksheet-cell` defaulting to `var(--fs-h2)`, `--fs-scratch`,
+  `--fs-unit-exp`, `--fs-text-strip`, `--color-scratch`, `--color-unit-exp`).
+  The matching `pages.css` selectors now reference these vars; the focused
+  (`*-active`) overlay states still use `--color-primary`. `.worksheet-cell`
+  also gained `overflow: hidden` so an oversized digit clips at the cell border
+  instead of spilling across grid lines. Default appearance is unchanged.
 
 - **JS/CSS assets revalidate instead of caching for 7 days** — `nginx.conf`
   served `.css`/`.js`/image/font files with `expires 7d; Cache-Control public`

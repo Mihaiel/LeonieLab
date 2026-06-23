@@ -166,8 +166,17 @@ footer.footer{
     width: 100%;
 }
 
-.header-worksheet nav .nav-list .left-side{
+.header-worksheet nav .nav-list .left-side,
+.header-worksheet nav .nav-list .right-side{
     display: flex;
-    justify-content: start;
+    align-items: center;
     gap: var(--space-s);
+}
+
+.header-worksheet nav .nav-list .left-side{
+    justify-content: start;
+}
+
+.header-worksheet nav .nav-list .right-side{
+    justify-content: flex-end;
 }

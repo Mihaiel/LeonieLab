@@ -7,6 +7,7 @@ import { OperationManager } from './logic/OperationManager.js';
 import { DocumentService } from './services/DocumentService.js';
 import { UndoManager } from './services/UndoManager.js';
 import { AudioFeedback } from './services/AudioFeedback.js';
+import { SettingsService, DEFAULTS as SETTINGS_DEFAULTS } from './services/SettingsService.js';
 
 function setupWorksheet(){
   const main = document.getElementById('main-content');
@@ -20,8 +21,14 @@ function setupWorksheet(){
     main.appendChild(root);
   }
 
-  const doc = new Document();
+  // Load user settings first and apply the visual ones (CSS vars) before any
+  // mount, so the very first paint uses the configured fonts/colors/motion.
+  const settings = new SettingsService();
+  settings.applyVisual();
+
+  const doc = new Document(settings.get().rows, settings.get().cols);
   const grid = new GridRenderer(root, doc);
+  settings.applyCellSize(grid); // set cell px before the first mount
   grid.mount();
   const opManager = new OperationManager(doc);
   const logic = new ApplicationLogic(doc, grid, opManager);
@@ -30,6 +37,7 @@ function setupWorksheet(){
   const ds = new DocumentService();
 
   const audio = new AudioFeedback();
+  settings.applyAudio(audio); // honor the persisted mute state
   opManager.onVerdict = (verdict) => {
     if (verdict === 'correct') audio.correct();
     else if (verdict === 'wrong') audio.wrong();
@@ -90,7 +98,10 @@ function setupWorksheet(){
     const saved = localStorage.getItem(AUTO_SAVE_KEY);
     if (saved) {
       const ok = ds.importFromText(saved, doc);
-      if (ok) { grid.renderAll(); showRestoreBanner(); }
+      // A restored worksheet is authoritative for its own geometry — its
+      // rows/cols may differ from the settings-built grid, so re-mount to
+      // rebuild the correct cell count before painting content.
+      if (ok) { grid.mount(); grid.renderAll(); showRestoreBanner(); }
     }
   } catch (_) {}
 
@@ -109,7 +120,7 @@ function setupWorksheet(){
   if (btnPrint) btnPrint.addEventListener('click', doPrint);
   // Save PDF instantly without print dialog
   if (btnSavePdf) btnSavePdf.addEventListener('click', async () => {
-    await pdf.saveInstant(doc);
+    await pdf.saveInstant(doc, grid.cellSize);
   });
 
   // Save/Open with DocumentService
@@ -144,6 +155,119 @@ function setupWorksheet(){
     });
   }
 
+  // ---- Settings modal (native <dialog>) ----
+  const dlg = q('settingsDialog');
+  if (dlg) {
+    // Map each settings key → {input id, optional <output> id}. Numeric/range
+    // fields read .value as a number; the two colors read .value as a string;
+    // audio/reduceMotion are checkboxes (.checked).
+    const RANGE_FIELDS = [
+      ['cellSize',    'setCellSize',    'outCellSize'],
+      ['fsCell',      'setFsCell',      'outFsCell'],
+      ['fsScratch',   'setFsScratch',   'outFsScratch'],
+      ['fsUnitExp',   'setFsUnitExp',   'outFsUnitExp'],
+      ['fsTextStrip', 'setFsTextStrip', 'outFsTextStrip'],
+    ];
+
+    const setRows = q('setRows'), setCols = q('setCols');
+    const setColorScratch = q('setColorScratch'), setColorUnitExp = q('setColorUnitExp');
+    const setAudio = q('setAudio'), setReduceMotion = q('setReduceMotion');
+    const sizeNote = q('settingsSizeNote');
+
+    // Reflect a range slider's value (plus its data-unit suffix) into its <output>.
+    const syncOutput = (inputId, outputId) => {
+      const inp = q(inputId), out = q(outputId);
+      if (inp && out) out.textContent = inp.value + (inp.dataset.unit || '');
+    };
+
+    // Write all controls from a settings object.
+    function populateForm(s) {
+      if (setRows) setRows.value = s.rows;
+      if (setCols) setCols.value = s.cols;
+      for (const [key, inputId, outputId] of RANGE_FIELDS) {
+        const inp = q(inputId);
+        if (inp) inp.value = s[key];
+        syncOutput(inputId, outputId);
+      }
+      if (setColorScratch) setColorScratch.value = s.colorScratch;
+      if (setColorUnitExp) setColorUnitExp.value = s.colorUnitExp;
+      if (setAudio) setAudio.checked = !!s.audioEnabled;
+      if (setReduceMotion) setReduceMotion.checked = !!s.reduceMotion;
+
+      // Rows/cols may only change on an empty sheet — disable + explain otherwise.
+      const empty = SettingsService.isWorksheetEmpty(doc);
+      if (setRows) setRows.disabled = !empty;
+      if (setCols) setCols.disabled = !empty;
+      if (sizeNote) sizeNote.hidden = empty;
+    }
+
+    // Live <output> updates while dragging a slider.
+    for (const [, inputId, outputId] of RANGE_FIELDS) {
+      const inp = q(inputId);
+      if (inp) inp.addEventListener('input', () => syncOutput(inputId, outputId));
+    }
+
+    const btnSettings = q('btnSettings');
+    if (btnSettings) btnSettings.addEventListener('click', () => {
+      populateForm(settings.get());
+      dlg.showModal();
+    });
+
+    const btnCancel = q('btnSettingsCancel');
+    if (btnCancel) btnCancel.addEventListener('click', () => dlg.close());
+
+    // Header ✕ — same as Cancel (discard, no apply).
+    const btnClose = q('btnSettingsClose');
+    if (btnClose) btnClose.addEventListener('click', () => dlg.close());
+
+    // Reset only repopulates the form with defaults (does not persist or apply);
+    // the user still presses Apply to commit, and Cancel discards as expected.
+    const btnReset = q('btnSettingsReset');
+    if (btnReset) btnReset.addEventListener('click', () => {
+      populateForm(SETTINGS_DEFAULTS);
+    });
+
+    // Apply: read controls → patch → persist → apply. Visual settings always
+    // apply live; cell-size re-mounts (content preserved); rows/cols resize only
+    // when the sheet is empty (inputs are disabled otherwise, so the patch can't
+    // change them anyway).
+    const form = q('settingsForm');
+    if (form) form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const prev = { ...settings.get() };
+      const patch = {
+        cellSize:     Number(q('setCellSize').value),
+        fsCell:       Number(q('setFsCell').value),
+        fsScratch:    Number(q('setFsScratch').value),
+        fsUnitExp:    Number(q('setFsUnitExp').value),
+        fsTextStrip:  Number(q('setFsTextStrip').value),
+        colorScratch: setColorScratch.value,
+        colorUnitExp: setColorUnitExp.value,
+        audioEnabled: setAudio.checked,
+        reduceMotion: setReduceMotion.checked,
+      };
+      if (setRows && !setRows.disabled) patch.rows = parseInt(setRows.value, 10);
+      if (setCols && !setCols.disabled) patch.cols = parseInt(setCols.value, 10);
+
+      const s = settings.set(patch);
+      settings.applyVisual();
+      settings.applyAudio(audio);
+
+      if (s.cellSize !== prev.cellSize) {
+        settings.applyCellSize(grid);
+        grid.mount();
+        grid.renderAll();
+      }
+      if (s.rows !== prev.rows || s.cols !== prev.cols) {
+        undoMgr.clear();
+        settings.applyGridSize(doc, grid, logic);
+      }
+
+      scheduleAutoSave();
+      dlg.close();
+    });
+  }
+
   // Mouse / touch: click (or tap) a cell to move the cursor there.
   // A tap on a touchscreen fires a synthetic click, so this single handler
   // covers both pointing devices. NOTE: this only handles cell *selection* —
@@ -169,6 +293,9 @@ function setupWorksheet(){
 
   // Keyboard input
     document.addEventListener('keydown', (e) => {
+    // While the settings modal is open it owns the keyboard — let digits,
+    // arrows, Backspace and Tab reach its inputs instead of the grid.
+    if (dlg?.open) return;
     // Undo: Ctrl+Z / Cmd+Z — handled before the meta guard below
     if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
       const snap = undoMgr.pop();

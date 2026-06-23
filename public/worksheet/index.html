@@ -69,6 +69,12 @@
                     Print</button></li>
             </div>
             <div class="right-side">
+                <li><button id="btnSettings" class="button-white" aria-haspopup="dialog">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 5.5C6.61929 5.5 5.5 6.61929 5.5 8C5.5 9.38071 6.61929 10.5 8 10.5C9.38071 10.5 10.5 9.38071 10.5 8C10.5 6.61929 9.38071 5.5 8 5.5ZM6.5 8C6.5 7.17157 7.17157 6.5 8 6.5C8.82843 6.5 9.5 7.17157 9.5 8C9.5 8.82843 8.82843 9.5 8 9.5C7.17157 9.5 6.5 8.82843 6.5 8Z" fill="#51ABEC"/>
+                    <path d="M6.84 0.5C6.46 0.5 6.13 0.77 6.06 1.14L5.83 2.36C5.46 2.5 5.11 2.71 4.8 2.96L3.62 2.55C3.27 2.43 2.88 2.57 2.69 2.89L1.53 4.9C1.34 5.22 1.41 5.63 1.69 5.87L2.65 6.68C2.62 6.89 2.6 7.1 2.6 7.32C2.6 7.32 2.6 8.68 2.6 8.68C2.6 8.9 2.62 9.11 2.65 9.32L1.69 10.13C1.41 10.37 1.34 10.78 1.53 11.1L2.69 13.11C2.88 13.43 3.27 13.57 3.62 13.45L4.8 13.04C5.11 13.29 5.46 13.5 5.83 13.64L6.06 14.86C6.13 15.23 6.46 15.5 6.84 15.5H9.16C9.54 15.5 9.87 15.23 9.94 14.86L10.17 13.64C10.54 13.5 10.89 13.29 11.2 13.04L12.38 13.45C12.73 13.57 13.12 13.43 13.31 13.11L14.47 11.1C14.66 10.78 14.59 10.37 14.31 10.13L13.35 9.32C13.38 9.11 13.4 8.9 13.4 8.68V7.32C13.4 7.1 13.38 6.89 13.35 6.68L14.31 5.87C14.59 5.63 14.66 5.22 14.47 4.9L13.31 2.89C13.12 2.57 12.73 2.43 12.38 2.55L11.2 2.96C10.89 2.71 10.54 2.5 10.17 2.36L9.94 1.14C9.87 0.77 9.54 0.5 9.16 0.5H6.84Z" stroke="#51ABEC" fill="none"/>
+                    </svg>
+                    Settings</button></li>
                 <li><button id="btnClear" class="button-red">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M6.5 1H9.5C9.77614 1 10 1.22386 10 1.5V2.5H6V1.5C6 1.22386 6.22386 1 6.5 1ZM11 2.5V1.5C11 0.671573 10.3284 0 9.5 0H6.5C5.67157 0 5 0.671573 5 1.5V2.5H2.50566C2.50226 2.49997 2.49885 2.49997 2.49544 2.5H1.5C1.22386 2.5 1 2.72386 1 3C1 3.27614 1.22386 3.5 1.5 3.5H2.0384L2.89116 14.1595C2.97431 15.1989 3.84207 16 4.88479 16H11.1152C12.1579 16 13.0257 15.1989 13.1088 14.1595L13.9616 3.5H14.5C14.7761 3.5 15 3.27614 15 3C15 2.72386 14.7761 2.5 14.5 2.5H13.5046C13.5011 2.49997 13.4977 2.49997 13.4943 2.5H11ZM12.9584 3.5L12.112 14.0797C12.0704 14.5994 11.6366 15 11.1152 15H4.88479C4.36343 15 3.92955 14.5994 3.88798 14.0797L3.0416 3.5H12.9584ZM5.47064 4.50086C5.74631 4.48465 5.98292 4.69497 5.99914 4.97064L6.49914 13.4706C6.51535 13.7463 6.30503 13.9829 6.02936 13.9991C5.7537 14.0154 5.51708 13.805 5.50086 13.5294L5.00086 5.02936C4.98465 4.7537 5.19497 4.51708 5.47064 4.50086ZM10.5294 4.50086C10.805 4.51708 11.0154 4.7537 10.9991 5.02936L10.4991 13.5294C10.4829 13.805 10.2463 14.0154 9.97064 13.9991C9.69497 13.9829 9.48465 13.7463 9.50086 13.4706L10.0009 4.97064C10.0171 4.69497 10.2537 4.48465 10.5294 4.50086ZM8 4.5C8.27614 4.5 8.5 4.72386 8.5 5V13.5C8.5 13.7761 8.27614 14 8 14C7.72386 14 7.5 13.7761 7.5 13.5V5C7.5 4.72386 7.72386 4.5 8 4.5Z" fill="#FF3333"/>
@@ -82,6 +88,120 @@
   
   <main id="main-content">
   </main>
+
+  <dialog id="settingsDialog" class="settings-dialog" aria-label="Worksheet settings">
+    <form method="dialog" id="settingsForm" class="settings-form">
+      <header class="settings-header">
+        <h2 class="settings-title">Settings</h2>
+        <button type="button" id="btnSettingsClose" class="settings-close" aria-label="Close settings">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </header>
+
+      <div class="settings-body">
+        <section class="settings-group">
+          <p class="settings-group-title">Grid</p>
+          <div class="settings-card">
+            <div class="settings-row">
+              <label for="setRows">Rows</label>
+              <input type="number" id="setRows" min="5" max="60" step="1" class="settings-number">
+            </div>
+            <div class="settings-row">
+              <label for="setCols">Columns</label>
+              <input type="number" id="setCols" min="5" max="40" step="1" class="settings-number">
+            </div>
+            <div class="settings-row">
+              <label for="setCellSize">Cell size</label>
+              <div class="settings-control">
+                <input type="range" id="setCellSize" min="28" max="80" step="1" data-unit=" px">
+                <output id="outCellSize" class="settings-value"></output>
+              </div>
+            </div>
+          </div>
+          <p id="settingsSizeNote" class="settings-note" hidden>
+            Clear the worksheet to change its rows or columns.
+          </p>
+        </section>
+
+        <section class="settings-group">
+          <p class="settings-group-title">Typography</p>
+          <div class="settings-card">
+            <div class="settings-row">
+              <label for="setFsCell">Digit font</label>
+              <div class="settings-control">
+                <input type="range" id="setFsCell" min="1.2" max="4" step="0.05" data-unit=" rem">
+                <output id="outFsCell" class="settings-value"></output>
+              </div>
+            </div>
+            <div class="settings-row">
+              <label for="setFsScratch">Carry / borrow font</label>
+              <div class="settings-control">
+                <input type="range" id="setFsScratch" min="0.6" max="2" step="0.05" data-unit=" rem">
+                <output id="outFsScratch" class="settings-value"></output>
+              </div>
+            </div>
+            <div class="settings-row">
+              <label for="setFsUnitExp">Unit exponent font</label>
+              <div class="settings-control">
+                <input type="range" id="setFsUnitExp" min="0.6" max="2" step="0.05" data-unit=" rem">
+                <output id="outFsUnitExp" class="settings-value"></output>
+              </div>
+            </div>
+            <div class="settings-row">
+              <label for="setFsTextStrip">Text strip font</label>
+              <div class="settings-control">
+                <input type="range" id="setFsTextStrip" min="0.8" max="3" step="0.05" data-unit=" rem">
+                <output id="outFsTextStrip" class="settings-value"></output>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-group">
+          <p class="settings-group-title">Colors</p>
+          <div class="settings-card">
+            <div class="settings-row">
+              <label for="setColorScratch">Carry / borrow text</label>
+              <input type="color" id="setColorScratch" class="settings-swatch">
+            </div>
+            <div class="settings-row">
+              <label for="setColorUnitExp">Unit exponent text</label>
+              <input type="color" id="setColorUnitExp" class="settings-swatch">
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-group">
+          <p class="settings-group-title">Feedback &amp; motion</p>
+          <div class="settings-card">
+            <div class="settings-row">
+              <span class="settings-row-label">Sound feedback</span>
+              <label class="settings-toggle">
+                <input type="checkbox" id="setAudio" aria-label="Sound feedback">
+                <span class="settings-toggle-track" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="settings-row">
+              <span class="settings-row-label">Reduce motion</span>
+              <label class="settings-toggle">
+                <input type="checkbox" id="setReduceMotion" aria-label="Reduce motion">
+                <span class="settings-toggle-track" aria-hidden="true"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="settings-actions">
+        <button type="button" id="btnSettingsReset" class="settings-btn settings-btn-plain">Reset</button>
+        <span class="settings-actions-spacer"></span>
+        <button type="button" id="btnSettingsCancel" class="settings-btn settings-btn-plain">Cancel</button>
+        <button type="submit" id="btnSettingsApply" class="settings-btn settings-btn-primary">Apply</button>
+      </footer>
+    </form>
+  </dialog>
 
   <footer class="footer">
     <div class="footer-inner">

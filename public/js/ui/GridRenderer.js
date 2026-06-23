@@ -4,6 +4,10 @@ export class GridRenderer {
     this.doc     = doc;
     this.gridEl  = null;
     this.overlayEl = null;
+    // On-screen cell size in px (configurable via SettingsService). mount()
+    // rebuilds the grid at this size; overlay math reads offset* from the laid
+    // out cells, so everything self-corrects after a re-mount.
+    this.cellSize = 48;
     // Rows whose content lives in scratch overlays on the row below, not in their own cells
     this.scratchRows = new Set();
     // Text strip overlay elements keyed by "row:startCol" (multiple strips per row)
@@ -15,7 +19,7 @@ export class GridRenderer {
     const grid = document.createElement('div');
     grid.className = 'worksheet-grid';
     grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = `repeat(${this.doc.cols}, 48px)`;
+    grid.style.gridTemplateColumns = `repeat(${this.doc.cols}, ${this.cellSize}px)`;
     grid.style.gap = '0';
     grid.style.userSelect = 'none';
     grid.style.position = 'relative';
@@ -25,8 +29,8 @@ export class GridRenderer {
       for (let c = 0; c < this.doc.cols; c++) {
         const cell = document.createElement('div');
         cell.className = 'worksheet-cell';
-        cell.style.width = '48px';
-        cell.style.height = '48px';
+        cell.style.width = `${this.cellSize}px`;
+        cell.style.height = `${this.cellSize}px`;
         cell.style.border = '1px solid #eee';
         cell.dataset.r = String(r);
         cell.dataset.c = String(c);

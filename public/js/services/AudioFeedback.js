@@ -18,6 +18,8 @@
 export class AudioFeedback {
   constructor() {
     this._ctx = null;
+    // When false, every tone becomes a no-op (settable via SettingsService).
+    this.enabled = true;
   }
 
   _getCtx() {
@@ -28,6 +30,7 @@ export class AudioFeedback {
   }
 
   _tone(freq, type, duration, gain) {
+    if (!this.enabled) return;
     const ctx = this._getCtx();
     const osc = ctx.createOscillator();
     const amp = ctx.createGain();

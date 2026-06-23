@@ -23,8 +23,8 @@ export class PDFExporter {
   // a canvas that mirrors the live worksheet — grid lines, underlines, locked
   // result cells (blue), carry/borrow scratch overlays, and text strips —
   // then embedded as a JPEG inside a minimal A4 PDF.
-  async saveInstant(doc){
-    const CELL = 48; // px per cell, matches the on-screen grid
+  async saveInstant(doc, cell = 48){
+    const CELL = cell; // px per cell, matches the on-screen grid (GridRenderer.cellSize)
     const width  = doc.cols * CELL;
     const height = doc.rows * CELL;
     const canvas = document.createElement('canvas');
@@ -92,7 +92,7 @@ export class PDFExporter {
     //    (scratch content is rendered as overlays on the A-row instead).
     //    Locked-result digits are drawn in the app's primary blue so they
     //    stand out from the rest of the worksheet without a background tint.
-    ctx.font = '40px sans-serif';
+    ctx.font = `${Math.round(cell * 0.83)}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (let r = 0; r < doc.rows; r++) {
@@ -110,7 +110,7 @@ export class PDFExporter {
     //    corner of each covered A-row cell. Font is larger and the colour
     //    darker than the live on-screen overlay (#bbb) so it survives JPEG
     //    compression and printed output without disappearing.
-    ctx.font = 'bold 18px sans-serif';
+    ctx.font = `bold ${Math.round(cell * 0.375)}px sans-serif`;
     ctx.fillStyle = '#6f6f6f';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
@@ -125,7 +125,7 @@ export class PDFExporter {
     // 5b. Unit exponents — small raised superscript in the top-right of a
     //     unit's last-letter cell (m², cm², mⁿ). Drawn after the cell chars so
     //     it sits on top, in full black for legibility.
-    ctx.font = 'bold 18px sans-serif';
+    ctx.font = `bold ${Math.round(cell * 0.375)}px sans-serif`;
     ctx.fillStyle = '#000';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
@@ -156,7 +156,7 @@ export class PDFExporter {
       ctx.rect(x + 2, y + 2, w - 4, h - 4);
       ctx.clip();
       ctx.fillStyle = '#464646';
-      ctx.font = '24px sans-serif';
+      ctx.font = `${Math.round(cell * 0.5)}px sans-serif`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(text, x + 8, y + cell / 2);
