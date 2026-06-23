@@ -189,17 +189,26 @@ function setupWorksheet(){
     }
 
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    // Tab moves the cursor one cell to the right (Shift+Tab one cell to the
+    // left), with the same row-wrapping as the arrow keys. Normalising it to an
+    // arrow key here lets Tab reuse every path below — locked-box exit,
+    // result-entry clamp, and the plain wrapping move in ApplicationLogic —
+    // instead of duplicating that logic. Tab always reaches one of those paths,
+    // which call preventDefault, so focus never escapes the worksheet.
+    const key = (e.key === 'Tab') ? (e.shiftKey ? 'ArrowLeft' : 'ArrowRight') : e.key;
+
     // Allow auto-repeat for Backspace (erase) and arrow keys (navigation)
-    if (e.repeat && e.key !== 'Backspace' && !e.key.startsWith('Arrow')) return;
+    if (e.repeat && key !== 'Backspace' && !key.startsWith('Arrow')) return;
 
     // One-click exit from a locked box selection with arrow keys
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    if (key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown') {
     const cur = logic.cursor || { row: 0, col: 0 };
     const r = opManager?.getLockedRangeAt?.(cur.row, cur.col);
     if (r && r.boxRange) {
     const b = r.boxRange;
     let nr = cur.row, nc = cur.col;
-    switch (e.key) {
+    switch (key) {
     case 'ArrowLeft':
     if (b.startCol > 0) nc = b.startCol - 1;
     else if (b.topRow > 0) nr = b.topRow - 1;
@@ -231,28 +240,9 @@ function setupWorksheet(){
     }
     }
 
-    // Tab: jump to the next unlocked result row (wraps around). Blocked while
-    // a result entry is already active — the student is locked into that box
-    // until it's filled or cancelled via Escape.
-    if (e.key === 'Tab') {
-      if (!(opManager.active && opManager.active.op === 'result')) {
-        const unlocked = (opManager.resultRanges || []).filter(r => !r.locked);
-        if (unlocked.length > 0) {
-          unlocked.sort((a, b) => a.row - b.row || a.endCol - b.endCol);
-          const cur = logic.cursor;
-          let target = unlocked.find(r => r.row > cur.row || (r.row === cur.row && r.endCol > cur.col));
-          if (!target) target = unlocked[0]; // wrap around
-          opManager.beginResultEntry(target);
-          logic.setCursor(target.row, target.endCol);
-        }
-      }
-      e.preventDefault();
-      return;
-    }
-
     // Snapshot state before mutation for undo
     undoMgr.push(doc, logic.cursor);
-    if (logic.handleKey(e.key)) {
+    if (logic.handleKey(key)) {
       e.preventDefault();
       scheduleAutoSave();
     } else {

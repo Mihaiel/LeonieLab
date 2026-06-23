@@ -771,9 +771,21 @@ export class ApplicationLogic {
     this.setCursor(row, col);
   }
 
-  // Move helpers
-  moveLeft()  { this.setCursor(this.cursor.row, this.cursor.col - 1); }
-  moveRight() { this.setCursor(this.cursor.row, this.cursor.col + 1); }
+  // Move helpers. Left/right wrap across row boundaries — moving right past the
+  // last column lands on column 0 of the next row, and moving left from column 0
+  // lands on the last column of the previous row — mirroring how typing advances
+  // via nextCell(). At the very first (0,0) / last cell the cursor stays put
+  // (setCursor clamps), so there's no wrap off the top or bottom of the grid.
+  moveLeft() {
+    const { row, col } = this.cursor;
+    if (col <= 0 && row > 0) { this.setCursor(row - 1, this.doc.cols - 1); return; }
+    this.setCursor(row, col - 1);
+  }
+  moveRight() {
+    const { row, col } = this.cursor;
+    if (col >= this.doc.cols - 1 && row < this.doc.rows - 1) { this.setCursor(row + 1, 0); return; }
+    this.setCursor(row, col + 1);
+  }
   moveUp()    { this.setCursor(this.cursor.row - 1, this.cursor.col); }
   moveDown()  { this.setCursor(this.cursor.row + 1, this.cursor.col); }
 
