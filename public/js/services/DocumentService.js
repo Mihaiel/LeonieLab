@@ -20,7 +20,8 @@ export class DocumentService {
       underlineRanges:  doc.underlineRanges  || [],
       operationRanges:  doc.operationRanges  || [],
       textRows:         doc.textRows         || {},
-      version: 5,
+      exponents:        doc.exponents        || {},
+      version: 6,
     };
     return JSON.stringify(payload);
   }
@@ -51,6 +52,8 @@ export class DocumentService {
           }
         }
       }
+      // v6: unit exponents ({ "row:col": "2" }). Older files default to empty.
+      doc.exponents = (data.exponents && typeof data.exponents === 'object') ? data.exponents : {};
       return true;
     }catch{ return false; }
   }

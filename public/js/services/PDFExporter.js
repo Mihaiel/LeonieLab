@@ -122,6 +122,17 @@ export class PDFExporter {
       }
     }
 
+    // 5b. Unit exponents — small raised superscript in the top-right of a
+    //     unit's last-letter cell (m², cm², mⁿ). Drawn after the cell chars so
+    //     it sits on top, in full black for legibility.
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    for (const { row, col, value } of meta.exponents) {
+      ctx.fillText(value, col * cell + cell - 2, row * cell + 2);
+    }
+
     // 6. Text strips — floating overlays with tinted fill + dashed border.
     //    Text is clipped to the strip's inner bounds so it can't overflow
     //    beyond the strip's last cell (matches the live overlay's
@@ -159,12 +170,14 @@ export class PDFExporter {
   //   scratchRows:     Set<row>   of rows whose content lives in overlays
   //   scratchOverlays: Array<{ scratchRow, topRow, startCol, endCol }>
   //   textStrips:      Array<{ row, startCol, endCol, text }>
+  //   exponents:       Array<{ row, col, value }> unit superscripts (m², mⁿ)
   _collectRenderMeta(doc) {
     const lockedCells     = new Set();
     const hiddenCells     = new Set();
     const scratchRows     = new Set();
     const scratchOverlays = [];
     const textStrips      = [];
+    const exponents       = [];
 
     for (const range of doc.operationRanges || []) {
       if (range.locked) {
@@ -198,7 +211,17 @@ export class PDFExporter {
       }
     }
 
-    return { lockedCells, hiddenCells, scratchRows, scratchOverlays, textStrips };
+    if (doc.exponents) {
+      for (const [key, value] of Object.entries(doc.exponents)) {
+        if (!value) continue;
+        const [rStr, cStr] = key.split(':');
+        const row = parseInt(rStr, 10);
+        const col = parseInt(cStr, 10);
+        if (Number.isInteger(row) && Number.isInteger(col)) exponents.push({ row, col, value });
+      }
+    }
+
+    return { lockedCells, hiddenCells, scratchRows, scratchOverlays, textStrips, exponents };
   }
 
   // ===== PDF / JPEG encoding helpers ================================

@@ -850,6 +850,27 @@ section.hero-scroll{
     color: var(--color-primary);
 }
 
+/* Unit exponent overlays — superscript in the top-right of a unit's last
+   letter (m², cm², mⁿ). Unlike the faint carry scratch, this is real content,
+   so it uses the full text colour. */
+.unit-exp-overlay{
+    position: absolute;
+    top: 0;
+    right: 1px;
+    font-size: 1.15rem;
+    line-height: 1;
+    color: var(--color-text);
+    pointer-events: none;
+    min-width: 6px;
+    text-align: center;
+    border-radius: 2px;
+}
+
+.unit-exp-overlay.unit-exp-active{
+    outline: 1px solid var(--color-primary);
+    color: var(--color-primary);
+}
+
 /* Text row overlay — starts narrow, grows with content up to full row width */
 .text-row-overlay{
     position: absolute;
@@ -927,6 +948,11 @@ section.hero-scroll{
     .scratch-overlay{
         color: #555 !important;
         font-weight: 600 !important;
+    }
+    .unit-exp-overlay{
+        color: #000 !important;
+        outline: none !important;
+        font-size: calc((var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm)) / var(--cols) * 0.45) !important;
     }
     .worksheet-cell.result-correct{ background: transparent !important; }
     .worksheet-cell.box-selected{ background: transparent !important; }

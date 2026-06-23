@@ -19,6 +19,7 @@ export class Document {
     this.underlineRanges = [];   // [{ row, startCol, endCol }]
     this.operationRanges = [];   // same shape as OperationManager.resultRanges
     this.textRows = {};          // { [rowIndex]: Array<{ text, startCol, endCol }> } — text strips per row
+    this.exponents = {};         // { "row:col": "2" } — unit exponent superscripts (m², cm², mⁿ)
   }
 
   inBounds(r, c) {
@@ -44,5 +45,6 @@ export class Document {
     this.underlineRanges = [];
     this.operationRanges = [];
     this.textRows = {};
+    this.exponents = {};
   }
 }

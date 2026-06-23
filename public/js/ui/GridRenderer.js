@@ -145,6 +145,7 @@ export class GridRenderer {
       el.classList.remove('underline', 'result-correct', 'result-wrong');
       delete el.dataset.locked;
       el.querySelectorAll('.scratch-overlay').forEach(ov => ov.remove());
+      el.querySelectorAll('.unit-exp-overlay').forEach(ov => ov.remove());
     });
 
     // Re-apply underlines
@@ -213,6 +214,16 @@ export class GridRenderer {
         this._addScratchOverlay(b.topRow, c, b.scratchRow);
       }
     }
+
+    // Re-add unit exponent overlays (m², cm², mⁿ) from doc.exponents.
+    const exps = this.doc.exponents || {};
+    for (const key of Object.keys(exps)) {
+      if (!exps[key]) continue;
+      const [rStr, cStr] = key.split(':');
+      const r = parseInt(rStr, 10);
+      const c = parseInt(cStr, 10);
+      if (Number.isInteger(r) && Number.isInteger(c)) this.addUnitExponent(r, c);
+    }
   }
 
   // --- Scratch overlay helpers ---
@@ -259,6 +270,55 @@ export class GridRenderer {
     if (!cell) return;
     const ov = cell.querySelector('.scratch-overlay');
     if (ov) ov.classList.toggle('scratch-active', active);
+  }
+
+  // --- Unit exponent overlay helpers (m², cm², mⁿ) ---
+  // A superscript overlay in the top-right of a unit's final-letter cell.
+  // Content lives in doc.exponents["row:col"].
+
+  _expKey(r, c) { return `${r}:${c}`; }
+
+  // Create the overlay (if absent) and sync its text from the doc.
+  addUnitExponent(r, c) {
+    const cell = this.gridEl?.children[r * this.doc.cols + c];
+    if (!cell) return;
+    cell.style.position = 'relative';
+    let ov = cell.querySelector('.unit-exp-overlay');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.className = 'unit-exp-overlay';
+      cell.appendChild(ov);
+    }
+    ov.textContent = this.doc.exponents?.[this._expKey(r, c)] || '';
+  }
+
+  // Sync overlay text after a digit is typed/deleted. Creates the overlay if a
+  // value exists and it is missing; leaves an empty overlay in place (so the
+  // active outline stays visible) — removeUnitExponent tears it down on exit.
+  updateUnitExponent(r, c) {
+    const cell = this.gridEl?.children[r * this.doc.cols + c];
+    if (!cell) return;
+    const val = this.doc.exponents?.[this._expKey(r, c)] || '';
+    let ov = cell.querySelector('.unit-exp-overlay');
+    if (!ov) { if (!val) return; this.addUnitExponent(r, c); ov = cell.querySelector('.unit-exp-overlay'); }
+    if (ov) ov.textContent = val;
+  }
+
+  // Remove the overlay entirely (used on exit when the exponent is empty).
+  removeUnitExponent(r, c) {
+    const cell = this.gridEl?.children[r * this.doc.cols + c];
+    const ov = cell?.querySelector('.unit-exp-overlay');
+    if (ov) ov.remove();
+  }
+
+  // Toggle the active (focused) state. When activating an empty unit cell the
+  // overlay is created so the student sees where the exponent will go.
+  setUnitExpCursor(r, c, active) {
+    const cell = this.gridEl?.children[r * this.doc.cols + c];
+    if (!cell) return;
+    let ov = cell.querySelector('.unit-exp-overlay');
+    if (!ov && active) { this.addUnitExponent(r, c); ov = cell.querySelector('.unit-exp-overlay'); }
+    if (ov) ov.classList.toggle('unit-exp-active', active);
   }
 
   // --- Underline helpers ---

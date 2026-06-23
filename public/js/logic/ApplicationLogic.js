@@ -6,6 +6,16 @@
   Backspace clears current (or previous) cell
 */
 
+// Recognised measurement units. Pressing ArrowUp on the FINAL letter of one of
+// these (typed inline into cells, e.g. "20km") opens a superscript exponent
+// overlay so the student can write m², cm², mⁿ, etc. Gating to a known list
+// keeps ArrowUp's normal "move up" behaviour on every other letter cell.
+// Longest-first so a multi-letter unit matches before its single-letter suffix.
+const ALLOWED_UNITS = ['mm', 'cm', 'dm', 'km', 'ml', 'cl', 'dl', 'mg', 'kg', 'min', 'm', 'l', 'g', 't', 's', 'h'];
+
+// Maximum exponent length — up to two characters (e.g. "2", "10", "n").
+const MAX_EXPONENT_LEN = 2;
+
 // OPERATION STUB HOOK left below for later features
 export class ApplicationLogic {
   constructor(doc, grid, opManager = null) {
@@ -15,6 +25,7 @@ export class ApplicationLogic {
     this.opManager = opManager; // optional; injected to keep concerns separated
     this.scratchMode = null;   // { scratchRow, aRow, col } when editing a scratch overlay
     this.textRowMode = null;   // { row, startCol, cursorPos } when editing a text strip
+    this.unitExpMode = null;   // { row, col } when editing a unit exponent overlay (m², cm², mⁿ)
     // Optional callback fired whenever a keystroke is absorbed as "rejected"
     // (unhandled key, non-digit inside result-entry, ArrowUp with no scratch
     // row, ArrowDown in result-entry, etc.). main.js hooks this to
@@ -52,6 +63,15 @@ export class ApplicationLogic {
       this.grid?.updateTextRowCursor?.(this.textRowMode.row, this.textRowMode.startCol, null);
       this.textRowMode = null;
     }
+    // Exit unit exponent mode whenever the cursor moves away (e.g. via a click).
+    // The internal _handleUnitExpKey exit path nulls unitExpMode before calling
+    // a move helper, so this guard only fires for external cursor moves.
+    if (this.unitExpMode) {
+      const { row: er, col: ec } = this.unitExpMode;
+      this.grid?.setUnitExpCursor?.(er, ec, false);
+      if (!(this.doc.exponents?.[`${er}:${ec}`])) this.grid?.removeUnitExponent?.(er, ec);
+      this.unitExpMode = null;
+    }
     const row = Math.max(0, Math.min(this.doc.rows - 1, r));
     const col = Math.max(0, Math.min(this.doc.cols - 1, c));
     this.cursor = { row, col };
@@ -83,6 +103,8 @@ export class ApplicationLogic {
     if (this.scratchMode) return this._handleScratchKey(key);
     // In text row mode all keys are routed to the text row handler
     if (this.textRowMode) return this._handleTextRowKey(key);
+    // In unit exponent mode all keys are routed to the exponent handler
+    if (this.unitExpMode) return this._handleUnitExpKey(key);
     // 0-9 digits
     if (/^[0-9]$/.test(key)) {
       // If we are in a result-entry phase, let the operation manager handle leftward fill
@@ -217,6 +239,10 @@ export class ApplicationLogic {
           // Enter scratch mode for this cell's overlay
           this.scratchMode = { scratchRow: scratch.scratchRow, aRow: this.cursor.row, col: this.cursor.col };
           this.grid?.setScratchCursor?.(this.cursor.row, this.cursor.col, true);
+        } else if (this._enterUnitExpMode(this.cursor.row, this.cursor.col)) {
+          // Entered unit-exponent mode on a recognised unit. Digit cells take
+          // the scratch path above; unit cells (letters) never overlap with it,
+          // so the two ArrowUp behaviours can't collide.
         } else {
           this.moveUp();
         }
@@ -325,6 +351,14 @@ export class ApplicationLogic {
       if (next && Number.isInteger(next.cursorRow) && Number.isInteger(next.cursorCol)) {
         this.setCursor(next.cursorRow, next.cursorCol);
       }
+      return true;
+    }
+
+    // Caret '^' is a convenience trigger for unit exponents (alongside ArrowUp):
+    // on — or just past — a recognised unit it opens the superscript overlay
+    // rather than typing a literal caret. With no unit nearby it falls through
+    // to the rejection path below.
+    if (key === '^' && this._enterUnitExpMode(this.cursor.row, this.cursor.col)) {
       return true;
     }
 
@@ -541,6 +575,102 @@ export class ApplicationLogic {
     return false;
   }
 
+  // Returns the recognised unit string ending at (row, col) — i.e. (row, col)
+  // is the LAST letter of an inline unit — or null. Requires the cell to hold a
+  // letter, the cell to its right to NOT be a letter (so the superscript sits
+  // at the unit's right edge, where m² belongs), and the maximal contiguous
+  // letter-run ending here to exactly match an allowed unit (case-insensitive).
+  _unitEndingAt(row, col) {
+    const isLetter = (r, c) => /^[a-zA-Z]$/.test(this.doc.getCell(r, c)?.char || '');
+    if (!isLetter(row, col)) return null;
+    if (col + 1 < this.doc.cols && isLetter(row, col + 1)) return null;
+    let start = col;
+    while (start > 0 && isLetter(row, start - 1)) start--;
+    let run = '';
+    for (let c = start; c <= col; c++) run += this.doc.getCell(row, c).char;
+    return ALLOWED_UNITS.includes(run.toLowerCase()) ? run : null;
+  }
+
+  // Try to enter unit-exponent mode for a unit at — or just left of — (row, col).
+  // Returns true if entered. Right after typing a unit the cursor rests ONE
+  // cell to its right (e.g. "20km" leaves the cursor on the empty cell past the
+  // "m"), so when the cursor cell is empty we fall back to the unit ending at
+  // col-1. This makes the natural "type the unit, press ↑" gesture work without
+  // a manual ← first. The visible cursor is moved onto the unit's last letter so
+  // the active superscript and the cursor stay together.
+  _enterUnitExpMode(row, col) {
+    let target = null;
+    if (this._unitEndingAt(row, col)) {
+      target = { row, col };
+    } else if (!(this.doc.getCell(row, col)?.char) && col > 0 && this._unitEndingAt(row, col - 1)) {
+      target = { row, col: col - 1 };
+    }
+    if (!target) return false;
+    if (target.row !== this.cursor.row || target.col !== this.cursor.col) {
+      this.setCursor(target.row, target.col); // safe: no mode active in this path
+    }
+    this.unitExpMode = { row: target.row, col: target.col };
+    this.grid?.setUnitExpCursor?.(target.row, target.col, true);
+    return true;
+  }
+
+  // Handle key input while a unit exponent overlay is active (m², cm², mⁿ).
+  // Behaves like a tiny one-cell editor: alphanumeric chars append (capped at
+  // MAX_EXPONENT_LEN), Backspace deletes / exits when already empty, Enter and
+  // Escape exit in place, and any arrow exits then performs the normal cursor
+  // move so the student "navigates out like usual". Everything else is rejected.
+  _handleUnitExpKey(key) {
+    const { row, col } = this.unitExpMode;
+    const k = `${row}:${col}`;
+    if (!this.doc.exponents) this.doc.exponents = {};
+    const current = this.doc.exponents[k] || '';
+
+    const exit = () => {
+      this.grid?.setUnitExpCursor?.(row, col, false);
+      if (!this.doc.exponents[k]) this.grid?.removeUnitExponent?.(row, col);
+      this.unitExpMode = null;
+    };
+
+    // Up to two characters, digits or letters (e.g. 2, 10, n).
+    if (/^[a-zA-Z0-9]$/.test(key)) {
+      if (current.length >= MAX_EXPONENT_LEN) { this._reject(); return true; }
+      this.doc.exponents[k] = current + key;
+      this.grid?.updateUnitExponent?.(row, col);
+      return true;
+    }
+
+    if (key === 'Backspace') {
+      if (current.length > 0) {
+        const next = current.slice(0, -1);
+        if (next) this.doc.exponents[k] = next; else delete this.doc.exponents[k];
+        this.grid?.updateUnitExponent?.(row, col);
+      } else {
+        delete this.doc.exponents[k];
+        exit();
+      }
+      return true;
+    }
+
+    if (key === 'Enter' || key === 'Escape') { exit(); return true; }
+    if (key === 'ArrowDown')  { exit(); this.moveDown();  return true; }
+    if (key === 'ArrowLeft')  { exit(); this.moveLeft();  return true; }
+    if (key === 'ArrowRight') { exit(); this.moveRight(); return true; }
+    if (key === 'ArrowUp')    { exit(); this.moveUp();    return true; }
+
+    this._reject();
+    return true;
+  }
+
+  // Drop any unit exponent attached to (row, col) — called when the cell's
+  // character is cleared or overwritten so a superscript never outlives its unit.
+  _dropExponentAt(row, col) {
+    const k = `${row}:${col}`;
+    if (this.doc.exponents && this.doc.exponents[k]) {
+      delete this.doc.exponents[k];
+      this.grid?.removeUnitExponent?.(row, col);
+    }
+  }
+
   // Delete an entire operation block (locked OR in-progress). Clears every
   // cell inside the box, strips result/lock classes, wipes the carry/borrow
   // scratch row, removes underlines, drops the range(s) from OperationManager,
@@ -603,6 +733,7 @@ export class ApplicationLogic {
   // Put a digit into current cell and go to next cell
   writeDigit(ch) {
     const { row, col } = this.cursor;
+    this._dropExponentAt(row, col); // overwriting a unit drops its exponent
     this.doc.setCell(row, col, ch);
     if (this.grid && this.grid.updateCell) {
       this.grid.updateCell(row, col);
@@ -619,6 +750,7 @@ export class ApplicationLogic {
     const cell = this.doc.getCell(row, col);
     if (cell && cell.char) {
       this.doc.setCell(row, col, '');
+      this._dropExponentAt(row, col);
       if (this.grid && this.grid.updateCell) this.grid.updateCell(row, col);
       this.setCursor(row, col);
       return;
@@ -634,6 +766,7 @@ export class ApplicationLogic {
       return;
     }
     this.doc.setCell(row, col, '');
+    this._dropExponentAt(row, col);
     if (this.grid && this.grid.updateCell) this.grid.updateCell(row, col);
     this.setCursor(row, col);
   }
