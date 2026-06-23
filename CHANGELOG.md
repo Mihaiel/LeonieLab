@@ -9,6 +9,55 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Unit exponents (m², cm², mⁿ)** — Inline units now support a superscript
+  exponent, entered with the same ArrowUp gesture as carry/borrow scratch.
+  Pressing `ArrowUp` (or the `^` key) on the **final letter** of a recognised
+  unit (`ApplicationLogic.ALLOWED_UNITS`: mm, cm, dm, km, ml, cl, dl, mg, kg,
+  min, m, l, g, t, s, h) opens a `.unit-exp-overlay` superscript in that cell's
+  top-right corner and enters `unitExpMode`. Because the cursor advances one
+  cell past a unit right after typing it, the trigger also accepts an empty
+  cursor cell and falls back to the unit ending immediately to its left
+  (`_enterUnitExpMode`), so the natural "type `20km`, press ↑" gesture works
+  without a manual ← first. The student types the exponent
+  (**up to two characters**, digits or letters — `2`, `10`, `n`), and any arrow
+  key / `Enter` / `Escape` leaves the overlay (arrows then perform the normal
+  cursor move, so the student "navigates out like usual"). `Backspace` deletes
+  the last character, then exits on an already-empty overlay; a third character
+  or any symbol fires the rejection tone. Eligibility (`_unitEndingAt`) requires
+  the cell to be a letter, the cell to its right to NOT be a letter (so the
+  superscript sits at the unit's right edge), and the maximal contiguous
+  letter-run ending there to exactly match an allowed unit — so ArrowUp keeps
+  its normal "move up" behaviour everywhere else. The exponent is a pure visual
+  annotation (units are not arithmetic-checked, same as letters). Values are
+  stored per-cell in `doc.exponents` (`{ "row:col": "2" }`), survive
+  save/open (DocumentService **version 6**, older files default to `{}`), undo,
+  and auto-save, are re-derived in `GridRenderer.applyAllDecorations()`, and are
+  rendered in PDF export via a new draw pass in `PDFExporter._renderWorksheet`.
+  Erasing or overwriting a unit cell drops its exponent (`_dropExponentAt`).
+  **Limitation:** only inline units typed into cells (e.g. `20km`) are
+  supported; a spaced unit (`20 km`) becomes a text strip and has no exponent
+  in this version.
+
+- **Click / tap to select a cell** — The grid is now pointer-navigable. A
+  delegated `click` listener on the worksheet root maps a click to its grid
+  coordinates and calls the existing `ApplicationLogic.setCursor(r, c)`, so all
+  cursor behaviour comes along unchanged: locked boxes highlight, text strips
+  enter edit mode, scratch mode exits, and a result row resumes when the next
+  digit is typed. Because a tap on a touchscreen fires a synthetic `click`, the
+  same handler enables basic touch navigation — though value entry (digits,
+  operators, Enter, ArrowUp-for-carry) still requires a physical keyboard since
+  the app has no on-screen keypad. The listener lives on `root` (which survives
+  `mount()` / file-open re-renders) rather than on the grid element (recreated
+  each mount). Text-strip overlays are tagged with `data-r` / `data-startCol`
+  and made `pointer-events: auto` so a click on a strip — which covers
+  `visibility:hidden` cells that can't be click targets — resolves back to its
+  start column and enters text-row mode; scratch overlays keep
+  `pointer-events: none` so clicks fall through to the parent A-row cell.
+  Cells get a `cursor: pointer` affordance. Clicks are pure navigation and push
+  no undo snapshot. Clicking outside an in-progress (unlocked) result row exits
+  result-entry mode without deleting the block — the typed digits stay and
+  entry resumes on the next keystroke.
+
 - **Multi-operand `+` / `-` chains** — Typing three or more numbers joined by
   `+` and `-` on the same row (e.g. `3+7+4`, `300-150-27+40`, mixed signs in
   any order) and pressing Enter now formats the whole chain as an N+1-row
