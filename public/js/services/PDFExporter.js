@@ -23,7 +23,9 @@ export class PDFExporter {
   // a canvas that mirrors the live worksheet — grid lines, underlines, locked
   // result cells (blue), carry/borrow scratch overlays, and text strips —
   // then embedded as a JPEG inside a minimal A4 PDF.
-  async saveInstant(doc, cell = 48, scratchPos = 'bottom-right'){
+  // `colors` mirrors the user's settings: { scratch, unitExp }. Defaults keep
+  // the previous print-friendly tones when not supplied.
+  async saveInstant(doc, cell = 48, scratchPos = 'bottom-right', colors = {}){
     const CELL = cell; // px per cell, matches the on-screen grid (GridRenderer.cellSize)
     const width  = doc.cols * CELL;
     const height = doc.rows * CELL;
@@ -32,7 +34,7 @@ export class PDFExporter {
     canvas.height = height;
     const ctx = canvas.getContext('2d');
 
-    this._renderWorksheet(ctx, doc, CELL, scratchPos);
+    this._renderWorksheet(ctx, doc, CELL, scratchPos, colors);
 
     // Encode → PDF → download
     const dataUrl   = canvas.toDataURL('image/jpeg', 0.92);
@@ -54,7 +56,7 @@ export class PDFExporter {
   // first, then grid lines and underlines, then text (so strokes never
   // paint over characters). Cells hidden by a text strip are skipped in
   // the character pass and replaced by the strip overlay at the end.
-  _renderWorksheet(ctx, doc, cell, scratchPos = 'bottom-right') {
+  _renderWorksheet(ctx, doc, cell, scratchPos = 'bottom-right', colors = {}) {
     const meta = this._collectRenderMeta(doc);
     const width  = doc.cols * cell;
     const height = doc.rows * cell;
@@ -111,7 +113,7 @@ export class PDFExporter {
     //    darker than the live on-screen overlay (#bbb) so it survives JPEG
     //    compression and printed output without disappearing.
     ctx.font = `bold ${Math.round(cell * 0.375)}px sans-serif`;
-    ctx.fillStyle = '#6f6f6f';
+    ctx.fillStyle = colors.scratch || '#6f6f6f';   // honor the user's carry/borrow color
     // Mirror the on-screen scratch corner (SettingsService.scratchPosition).
     const [vPos, hPos] = String(scratchPos).split('-');
     ctx.textAlign    = (hPos === 'left') ? 'left' : 'right';
@@ -130,7 +132,7 @@ export class PDFExporter {
     //     unit's last-letter cell (m², cm², mⁿ). Drawn after the cell chars so
     //     it sits on top, in full black for legibility.
     ctx.font = `bold ${Math.round(cell * 0.375)}px sans-serif`;
-    ctx.fillStyle = '#000';
+    ctx.fillStyle = colors.unitExp || '#000';      // honor the user's unit-exponent color
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
     for (const { row, col, value } of meta.exponents) {

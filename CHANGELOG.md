@@ -216,6 +216,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **PDF export & Print honor the carry/borrow and unit-exponent colors** — Both
+  output paths now use the user-configured colors instead of fixed tones. The
+  instant "Save as PDF" (`PDFExporter.saveInstant` → `_renderWorksheet`) takes a
+  `colors: { scratch, unitExp }` argument and paints the scratch digits and unit
+  exponents in those colors (passed from settings by `main.js`). The browser
+  "Print" path dropped its `@media print` `color: #555/#000 !important` overrides
+  on `.scratch-overlay` / `.unit-exp-overlay`, so the `--color-scratch` /
+  `--color-unit-exp` variables (set by `SettingsService.applyVisual`) cascade
+  through; the bold/legibility tweaks are kept.
+
 - **Worksheet font-sizes & annotation colors are now CSS variables** — To let
   the Settings system override them at runtime, the digit/scratch/unit-exponent/
   text-strip font-sizes and the scratch & unit-exponent text colors were lifted

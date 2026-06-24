@@ -1196,11 +1196,11 @@ section.hero-scroll{
         line-height: 1 !important;
     }
     .scratch-overlay{
-        color: #555 !important;
+        /* color inherits --color-scratch (user setting); keep it bold for print legibility */
         font-weight: 600 !important;
     }
     .unit-exp-overlay{
-        color: #000 !important;
+        /* color inherits --color-unit-exp (user setting) */
         outline: none !important;
         font-size: calc((var(--page-width-mm, 210mm) - 2 * var(--print-margin-mm, 10mm)) / var(--cols) * 0.45) !important;
     }

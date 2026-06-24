@@ -120,7 +120,11 @@ function setupWorksheet(){
   if (btnPrint) btnPrint.addEventListener('click', doPrint);
   // Save PDF instantly without print dialog
   if (btnSavePdf) btnSavePdf.addEventListener('click', async () => {
-    await pdf.saveInstant(doc, grid.cellSize, settings.get().scratchPosition);
+    const s = settings.get();
+    await pdf.saveInstant(doc, grid.cellSize, s.scratchPosition, {
+      scratch: s.colorScratch,
+      unitExp: s.colorUnitExp,
+    });
   });
 
   // Save/Open with DocumentService
