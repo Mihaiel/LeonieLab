@@ -9,6 +9,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Bruchrechnung (fractions)** — The student can now write a stacked fraction
+  and evaluate it. Typing a fraction inline and pressing **Enter** (e.g.
+  `12/4` ⏎) reformats it into a 3-row block — numerator on top, a centered
+  horizontal **fraction bar**, denominator below — with `=` and the answer on
+  the middle row, matching how fractions are written by hand. The given fraction's
+  numbers are drawn as **centered overlays** across the fraction's width, so a
+  short denominator sits centered under a wider numerator (`4` under `12`). The
+  app reduces the input to lowest terms and the expected answer is, accordingly:
+  a **whole number** (`12/4 = 3`), a **reduced ("gekürzt") proper fraction**
+  (`6/8 = 3/4`), or a **mixed number** for improper fractions
+  (`16/5 = 3 1/5` — whole part on the middle row, the remainder fraction stacked
+  beside it). The fraction/mixed answer is entered field-by-field with the cursor
+  **auto-advancing** between the stacked fields (`ArrowUp`/`ArrowDown` move
+  between them to correct), and is only marked correct **once every field is
+  filled** — typing just the numerator can no longer mark the whole block right.
+  A solved block is **read-only** (operands, `=`, and the locked answer can't be
+  overwritten); **Backspace** on it deletes the whole block. To free `/` for
+  fractions, **long division is now triggered by `:` only** (`/` no longer starts
+  a division). Implemented as a new `FractionOperation`
+  (`js/operations/FractionOperation.js`) registered on `/`, reusing the existing
+  result-entry/validation, locking, undo, and box-delete machinery (the block is
+  tagged `boxRange.kind === 'fraction'`, answer fields `kind === 'fraction-part'`).
+  Fraction bars and the centered operand numbers are new persisted decorations
+  (`Document.fractionBars` / `fractionTexts`), rendered as overlays
+  (`GridRenderer.addFractionBar` / `addFractionText`), drawn faithfully in the
+  canvas **Save as PDF** export, and round-tripped through autosave/Save-Open
+  (`DocumentService` payload **version 8**).
+
 - **Settings system** — A new **⚙ Settings** toolbar button opens a native
   `<dialog>` modal for adjusting the worksheet. Configurable: grid **rows** and
   **columns**, on-screen **cell size**, **carry/borrow position** (which corner

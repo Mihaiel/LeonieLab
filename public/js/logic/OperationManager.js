@@ -2,6 +2,7 @@ import { AddOperation } from '../operations/AddOperation.js';
 import { MulOperation } from '../operations/MulOperation.js';
 import { SubOperation } from '../operations/SubOperation.js';
 import { DivOperation } from '../operations/DivOperation.js';
+import { FractionOperation } from '../operations/FractionOperation.js';
 
 export class OperationManager {
   constructor(doc) {
@@ -16,8 +17,8 @@ export class OperationManager {
       '*': new MulOperation(),
       'x': new MulOperation(),
       'X': new MulOperation(),
-      '/': divOp, // same instance for both '/' and ':'
-      ':': divOp,
+      ':': divOp,                      // ':' is long division
+      '/': new FractionOperation(),    // '/' is Bruchrechnung (stacked fraction)
       '-': new SubOperation(),
     };
     // resultRanges is now backed by doc.operationRanges — no separate array.
@@ -29,11 +30,11 @@ export class OperationManager {
   get resultRanges() { return this.doc?.operationRanges ?? []; }
   set resultRanges(v) { if (this.doc) this.doc.operationRanges = v; }
 
-  begin(op, row, anchorCol) { 
-    if((op === '/' || op === ':') && this.registry['/']) {
-      this.registry['/'].resetState?.(this);
-    }    
-    this.active = { op, row, anchorCol }; 
+  begin(op, row, anchorCol) {
+    // Reset the relevant strategy's transient state when (re)starting an op.
+    // ':' → long division (jumping state); '/' → fraction (no-op).
+    if (this.registry[op]?.resetState) this.registry[op].resetState(this);
+    this.active = { op, row, anchorCol };
   }
   
   clearActive() { this.active = null; }
@@ -72,6 +73,9 @@ export class OperationManager {
 
   handleResultDigit(doc, grid, digit) {
   if (!this.active || this.active.op !== 'result') return false;
+
+  // Fractions/mixed numbers: a GROUP of stacked fields validated as a unit.
+  if (this.active.kind === 'fraction-part') return this._handleFractionPartDigit(doc, grid, digit);
 
   const { row, cursorCol, startCol, endCol, correctDigits, correctStartCol } = this.active;
   if (cursorCol < startCol || cursorCol > endCol) return false;
@@ -129,6 +133,91 @@ export class OperationManager {
   return true;
 }
 
+  // --- Fraction / mixed-number answer entry (grouped fields) ---
+  // All fields share a boxRange (kind 'fraction') and carry kind:'fraction-part'
+  // + an ordering `seq`. The cursor auto-advances seq → seq+1; the answer is
+  // only checked / locked / dinged once EVERY field is filled.
+  _sameBox(a, b) {
+    return a && b && a.topRow === b.topRow && a.resRow === b.resRow &&
+           a.startCol === b.startCol && a.endCol === b.endCol;
+  }
+  _fractionGroup(box) {
+    return this.resultRanges
+      .filter(r => r.kind === 'fraction-part' && r.boxRange && this._sameBox(r.boxRange, box))
+      .sort((x, y) => (x.seq ?? 0) - (y.seq ?? 0));
+  }
+  _fieldFilled(doc, f)  { return this.isResultFilled(doc, f.row, f.startCol, f.endCol); }
+  _fieldCorrect(doc, f) {
+    const typed    = this.collectString(doc, f.row, f.startCol, f.endCol);
+    const expected = this.buildExpected(f.correctDigits, f.correctStartCol, f.startCol, f.endCol);
+    return typed === expected;
+  }
+
+  _handleFractionPartDigit(doc, grid, digit) {
+    const a   = this.active;
+    const box = a.boxRange;
+    const fields = this._fractionGroup(box);
+
+    // Clear any prior red/blue across the whole group as the student resumes typing.
+    for (const f of fields) this.clearResultClasses(grid, f.row, f.startCol, f.endCol);
+
+    if (a.cursorCol < a.startCol || a.cursorCol > a.endCol) return false;
+    doc.setCell(a.row, a.cursorCol, digit);
+    grid?.updateCell?.(a.row, a.cursorCol);
+    a.cursorCol = Math.max(a.startCol, a.cursorCol - 1);
+
+    // Still filling the current field → keep typing here.
+    if (!this._fieldFilled(doc, a)) return true;
+
+    // Current field full → jump to the next not-yet-filled field (by seq).
+    const next = fields.find(f => !this._fieldFilled(doc, f));
+    if (next) {
+      this.active = { op: 'result', ...next, cursorCol: next.endCol };
+      return true;
+    }
+
+    // Every field filled → validate the answer as a UNIT.
+    const allOk = fields.every(f => this._fieldCorrect(doc, f));
+    for (const f of fields) {
+      this.applyResultClass(grid, f.row, f.startCol, f.endCol,
+        allOk ? 'result-correct' : (this._fieldCorrect(doc, f) ? 'result-correct' : 'result-wrong'));
+    }
+    if (allOk) {
+      for (const f of fields) this.markRangeLocked(grid, f.row, f.startCol, f.endCol);
+      this.resultRanges = this.resultRanges.map(r =>
+        (r.kind === 'fraction-part' && r.boxRange && this._sameBox(r.boxRange, box))
+          ? { ...r, locked: true, lockedStartCol: r.startCol, lockedEndCol: r.endCol }
+          : r
+      );
+      this.onVerdict?.('correct');
+      this.active = null;
+    } else {
+      this.onVerdict?.('wrong');
+      // Stay on the current field; ArrowUp/Down lets the student reach any
+      // field to correct it (handled in ApplicationLogic).
+    }
+    return true;
+  }
+
+  // True when (row,col) sits inside a fraction block but NOT inside one of its
+  // still-unlocked answer fields — i.e. an operand cell, the '=' cell, or an
+  // already-locked answer. Such cells are read-only: to change the problem the
+  // student deletes the whole block (Backspace).
+  isFractionCellProtected(row, col) {
+    for (const r of this.resultRanges) {
+      const b = r.boxRange;
+      if (!b || b.kind !== 'fraction') continue;
+      const inBox = row >= b.topRow && row <= b.resRow && col >= b.startCol && col <= b.endCol;
+      if (!inBox) continue;
+      const inUnlockedField = this.resultRanges.some(rr =>
+        !rr.locked && rr.boxRange && this._sameBox(rr.boxRange, b) &&
+        rr.row === row && col >= rr.startCol && col <= rr.endCol
+      );
+      return !inUnlockedField;
+    }
+    return false;
+  }
+
   handleResultBackspace(doc, grid) {
     if (!this.active || this.active.op !== 'result') return false;
     const { row, cursorCol, startCol, endCol } = this.active;
@@ -151,9 +240,9 @@ export class OperationManager {
   reset() {
     this.active = null;
     if (this.doc) this.doc.operationRanges = [];
-    // reset division state in DivOperation
-    if (this.registry['/']) {
-      this.registry['/'].resetState?.(this);
+    // reset division state in DivOperation (now keyed by ':')
+    if (this.registry[':']) {
+      this.registry[':'].resetState?.(this);
     }
   }
 

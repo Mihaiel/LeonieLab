@@ -12,6 +12,13 @@ export class GridRenderer {
     this.scratchRows = new Set();
     // Text strip overlay elements keyed by "row:startCol" (multiple strips per row)
     this.textRowOverlays = {};
+    // Fraction-bar overlay elements keyed by "row:startCol:endCol" (Bruchrechnung)
+    this.fractionBarEls = {};
+    // Fraction operand text overlays (centered numerator/denominator) keyed the same way
+    this.fractionTextEls = {};
+    // Cells whose internal vertical borders were suppressed to "merge" a
+    // multi-digit fraction number into one box (reset before each rebuild).
+    this._mergedCells = [];
   }
 
   mount() {
@@ -44,8 +51,11 @@ export class GridRenderer {
     }
     this.root.appendChild(grid);
     this.gridEl = grid;
-    // Reset text row overlay tracking on fresh mount
+    // Reset overlay tracking on fresh mount (els live inside the rebuilt grid)
     this.textRowOverlays = {};
+    this.fractionBarEls = {};
+    this.fractionTextEls = {};
+    this._mergedCells = [];
     this.applyAllDecorations();
   }
 
@@ -228,6 +238,126 @@ export class GridRenderer {
       const c = parseInt(cStr, 10);
       if (Number.isInteger(r) && Number.isInteger(c)) this.addUnitExponent(r, c);
     }
+
+    // Rebuild fraction bars (Bruchrechnung) from doc.fractionBars so they
+    // survive mount() / renderAll() / load.
+    for (const key of Object.keys(this.fractionBarEls)) this.fractionBarEls[key]?.remove();
+    this.fractionBarEls = {};
+    for (const { row, startCol, endCol } of (this.doc.fractionBars || [])) {
+      this._renderFractionBar(row, startCol, endCol);
+    }
+
+    // Rebuild fraction operand text overlays (centered numerator/denominator).
+    for (const key of Object.keys(this.fractionTextEls)) this.fractionTextEls[key]?.remove();
+    this.fractionTextEls = {};
+    for (const { row, startCol, endCol, text } of (this.doc.fractionTexts || [])) {
+      this._renderFractionText(row, startCol, endCol, text);
+    }
+
+    // "Merge" each fraction's cells: drop the internal vertical grid borders
+    // across the bar's 3-row span so a multi-digit number (e.g. "16") reads as
+    // one box rather than "1 | 6". Outer borders + horizontal lines stay.
+    for (const el of this._mergedCells) { el.style.borderLeft = ''; el.style.borderRight = ''; }
+    this._mergedCells = [];
+    for (const { row, startCol, endCol } of (this.doc.fractionBars || [])) {
+      if (endCol <= startCol) continue; // single-digit: nothing to merge
+      for (const r of [row - 1, row, row + 1]) {
+        for (let c = startCol; c <= endCol; c++) {
+          const el = this.gridEl.children[r * this.doc.cols + c];
+          if (!el) continue;
+          if (c > startCol) { el.style.borderLeft  = 'none'; this._mergedCells.push(el); }
+          if (c < endCol)   { el.style.borderRight = 'none'; this._mergedCells.push(el); }
+        }
+      }
+    }
+  }
+
+  // --- Fraction bar helpers (Bruchrechnung) ---
+
+  // Record a bar in the doc and draw it. Centered vertically on `row`,
+  // spanning columns [startCol, endCol].
+  addFractionBar(row, startCol, endCol) {
+    const s = Math.min(startCol, endCol);
+    const e = Math.max(startCol, endCol);
+    if (!Array.isArray(this.doc.fractionBars)) this.doc.fractionBars = [];
+    const exists = this.doc.fractionBars.some(b => b.row === row && b.startCol === s && b.endCol === e);
+    if (!exists) this.doc.fractionBars.push({ row, startCol: s, endCol: e });
+    this._renderFractionBar(row, s, e);
+  }
+
+  removeFractionBar(row, startCol, endCol) {
+    const s = Math.min(startCol, endCol);
+    const e = Math.max(startCol, endCol);
+    this.doc.fractionBars = (this.doc.fractionBars || []).filter(
+      b => !(b.row === row && b.startCol === s && b.endCol === e)
+    );
+    const key = `${row}:${s}:${e}`;
+    this.fractionBarEls[key]?.remove();
+    delete this.fractionBarEls[key];
+  }
+
+  _renderFractionBar(row, startCol, endCol) {
+    if (!this.gridEl) return;
+    const key = `${row}:${startCol}:${endCol}`;
+    let el = this.fractionBarEls[key];
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'fraction-bar-overlay';
+      this.gridEl.appendChild(el);
+      this.fractionBarEls[key] = el;
+    }
+    const startCell = this.gridEl.children[row * this.doc.cols + startCol];
+    const endCell   = this.gridEl.children[row * this.doc.cols + endCol];
+    if (!startCell || !endCell) return;
+    const inset = 4; // keep the bar off the cell borders for a clean look
+    el.style.left  = `${startCell.offsetLeft + inset}px`;
+    el.style.top   = `${startCell.offsetTop + startCell.offsetHeight / 2}px`;
+    el.style.width = `${endCell.offsetLeft + endCell.offsetWidth - startCell.offsetLeft - inset * 2}px`;
+  }
+
+  // --- Fraction operand text overlay (centered numerator/denominator) ---
+  // Renders a number centered across [startCol, endCol] on a row, so a short
+  // operand (e.g. "4") sits centered under a wider one (e.g. "12") instead of
+  // being stranded under its first cell. The cells underneath stay empty.
+  addFractionText(row, startCol, endCol, text) {
+    const s = Math.min(startCol, endCol);
+    const e = Math.max(startCol, endCol);
+    if (!Array.isArray(this.doc.fractionTexts)) this.doc.fractionTexts = [];
+    const i = this.doc.fractionTexts.findIndex(t => t.row === row && t.startCol === s && t.endCol === e);
+    if (i === -1) this.doc.fractionTexts.push({ row, startCol: s, endCol: e, text });
+    else this.doc.fractionTexts[i].text = text;
+    this._renderFractionText(row, s, e, text);
+  }
+
+  removeFractionText(row, startCol, endCol) {
+    const s = Math.min(startCol, endCol);
+    const e = Math.max(startCol, endCol);
+    this.doc.fractionTexts = (this.doc.fractionTexts || []).filter(
+      t => !(t.row === row && t.startCol === s && t.endCol === e)
+    );
+    const key = `${row}:${s}:${e}`;
+    this.fractionTextEls[key]?.remove();
+    delete this.fractionTextEls[key];
+  }
+
+  _renderFractionText(row, startCol, endCol, text) {
+    if (!this.gridEl) return;
+    const key = `${row}:${startCol}:${endCol}`;
+    let el = this.fractionTextEls[key];
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'fraction-text-overlay';
+      this.gridEl.appendChild(el);
+      this.fractionTextEls[key] = el;
+    }
+    el.textContent = text;
+    const startCell = this.gridEl.children[row * this.doc.cols + startCol];
+    const endCell   = this.gridEl.children[row * this.doc.cols + endCol];
+    if (!startCell || !endCell) return;
+    el.style.left   = `${startCell.offsetLeft}px`;
+    el.style.top    = `${startCell.offsetTop}px`;
+    el.style.width  = `${endCell.offsetLeft + endCell.offsetWidth - startCell.offsetLeft}px`;
+    el.style.height = `${startCell.offsetHeight}px`;
   }
 
   // --- Scratch overlay helpers ---

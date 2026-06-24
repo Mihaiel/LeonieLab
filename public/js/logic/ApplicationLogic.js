@@ -116,10 +116,21 @@ export class ApplicationLogic {
         }
         const res = this.opManager.handleResultDigit?.(this.doc, this.grid, key);
         if (res) {
+          // handleResultDigit manages active (incl. auto-advance between the
+          // stacked fields of a fraction/mixed answer); just follow the cursor.
           const a = this.opManager.active; // may be null if finished
           if (a && a.op === 'result') {
             this.setCursor(a.row, a.cursorCol);
           }
+          return true;
+        }
+
+        // Cells inside a locked fraction block (operands, '=', or an already
+        // locked answer) are read-only — the student deletes the block to
+        // change it. Reject stray digits so they can't overwrite a solved
+        // problem (and still show blue).
+        if (this.opManager.isFractionCellProtected?.(this.cursor.row, this.cursor.col)) {
+          this._reject();
           return true;
         }
       }
@@ -129,9 +140,9 @@ export class ApplicationLogic {
       const currentCol = this.cursor.col;
       let jumpTarget = null;
       
-      if (this.opManager && this.opManager.registry['/']?.handleCharacterTyped) {
-        jumpTarget = this.opManager.registry['/'].handleCharacterTyped(
-          this.doc, 
+      if (this.opManager && this.opManager.registry[':']?.handleCharacterTyped) {
+        jumpTarget = this.opManager.registry[':'].handleCharacterTyped(
+          this.doc,
           currentRow,
           currentCol,
           this.opManager
@@ -162,6 +173,19 @@ export class ApplicationLogic {
     // non-Enter key is swallowed so operators can't start a new op mid-entry.
     const resultActive = this.opManager?.active?.op === 'result';
     if (resultActive) {
+      // Fraction / mixed answers: ArrowUp/Down move between the stacked fields
+      // (numerator / whole / denominator) so any field can be corrected.
+      if (this.opManager.active.kind === 'fraction-part' && (key === 'ArrowUp' || key === 'ArrowDown')) {
+        const a = this.opManager.active;
+        const byRow = this.opManager._fractionGroup(a.boxRange).slice().sort((x, y) => x.row - y.row);
+        const idx = byRow.findIndex(f => f.row === a.row && f.startCol === a.startCol);
+        const nf = byRow[key === 'ArrowUp' ? idx - 1 : idx + 1];
+        if (nf) {
+          this.opManager.active = { op: 'result', ...nf, cursorCol: nf.endCol };
+          this.setCursor(nf.row, nf.endCol);
+        } else { this._reject(); }
+        return true;
+      }
       if (key === 'ArrowLeft') {
         const a = this.opManager.active;
         const cur = a.cursorCol ?? a.endCol;
@@ -719,6 +743,15 @@ export class ApplicationLogic {
       const u2s = boxRange.underline2Start ?? startCol;
       const u2e = boxRange.underline2End ?? endCol;
       this.grid?.removeUnderline?.(u2r, u2s, u2e);
+    }
+
+    // Fraction bars + operand text overlays belonging to this box (Bruchrechnung)
+    const inBox = (o) => o.row >= topRow && o.row <= resRow && !(o.endCol < startCol || o.startCol > endCol);
+    if (this.doc.fractionBars?.length) {
+      for (const b of this.doc.fractionBars.filter(inBox)) this.grid?.removeFractionBar?.(b.row, b.startCol, b.endCol);
+    }
+    if (this.doc.fractionTexts?.length) {
+      for (const t of this.doc.fractionTexts.filter(inBox)) this.grid?.removeFractionText?.(t.row, t.startCol, t.endCol);
     }
 
     // Manager cleanup + exit any in-progress result entry pointing at this box

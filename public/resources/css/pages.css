@@ -874,6 +874,30 @@ section.hero-scroll{
     color: var(--color-primary);
 }
 
+/* Fraction bars (Bruchrechnung) — a horizontal rule centered on a row,
+   drawn as an absolutely-positioned line spanning the fraction's columns. */
+.fraction-bar-overlay{
+    position: absolute;
+    height: 0;
+    border-top: 2px solid var(--color-fraction, var(--color-text));
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Fraction operand numbers (numerator/denominator of the given fraction),
+   rendered centered across the fraction's column span over empty cells. */
+.fraction-text-overlay{
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--fs-worksheet-cell);
+    color: var(--color-text);
+    line-height: 1;
+    pointer-events: none;
+    z-index: 1;
+}
+
 /* Text row overlay — starts narrow, grows with content up to full row width */
 .text-row-overlay{
     position: absolute;

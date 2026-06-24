@@ -77,6 +77,21 @@ export class PDFExporter {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
     }
 
+    // 2b. "Merge" multi-digit fraction numbers: paint over the internal vertical
+    //     grid lines inside each fraction's 3-row span (matches the on-screen
+    //     border suppression in GridRenderer).
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    for (const fb of meta.fractionBars) {
+      if (fb.endCol <= fb.startCol) continue;
+      const y1 = (fb.row - 1) * cell + 1;
+      const y2 = (fb.row + 2) * cell - 1;
+      for (let c = fb.startCol + 1; c <= fb.endCol; c++) {
+        const x = c * cell + 0.5;
+        ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x, y2); ctx.stroke();
+      }
+    }
+
     // 3. Underlines (operator row, plus optional multiplication underline 2)
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
@@ -84,6 +99,21 @@ export class PDFExporter {
       const y  = (ul.row + 1) * cell - 1.5;
       const x1 = ul.startCol * cell;
       const x2 = (ul.endCol + 1) * cell;
+      ctx.beginPath();
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x2, y);
+      ctx.stroke();
+    }
+
+    // 3b. Fraction bars (Bruchrechnung) — a rule centered vertically on the
+    //     row, inset slightly from the cell edges to match the on-screen
+    //     `.fraction-bar-overlay`.
+    ctx.strokeStyle = '#464646';
+    ctx.lineWidth = 2;
+    for (const fb of meta.fractionBars) {
+      const y  = fb.row * cell + cell / 2;
+      const x1 = fb.startCol * cell + 4;
+      const x2 = (fb.endCol + 1) * cell - 4;
       ctx.beginPath();
       ctx.moveTo(x1, y);
       ctx.lineTo(x2, y);
@@ -106,6 +136,18 @@ export class PDFExporter {
         ctx.fillStyle = meta.lockedCells.has(`${r}:${c}`) ? '#51ABEC' : '#464646';
         ctx.fillText(ch, c * cell + cell / 2, r * cell + cell / 2);
       }
+    }
+
+    // 4b. Fraction operand text overlays — numerator/denominator centered over
+    //     their column span (cells underneath are empty; see FractionOperation).
+    ctx.font = `${Math.round(cell * 0.83)}px sans-serif`;
+    ctx.fillStyle = '#464646';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const t of meta.fractionTexts) {
+      const cx = (t.startCol * cell + (t.endCol + 1) * cell) / 2;
+      const cy = t.row * cell + cell / 2;
+      ctx.fillText(String(t.text ?? ''), cx, cy);
     }
 
     // 5. Carry/borrow scratch overlays — small muted text in the top-right
@@ -184,6 +226,8 @@ export class PDFExporter {
     const scratchOverlays = [];
     const textStrips      = [];
     const exponents       = [];
+    const fractionBars    = Array.isArray(doc.fractionBars) ? doc.fractionBars : [];
+    const fractionTexts   = Array.isArray(doc.fractionTexts) ? doc.fractionTexts : [];
 
     for (const range of doc.operationRanges || []) {
       if (range.locked) {
@@ -227,7 +271,7 @@ export class PDFExporter {
       }
     }
 
-    return { lockedCells, hiddenCells, scratchRows, scratchOverlays, textStrips, exponents };
+    return { lockedCells, hiddenCells, scratchRows, scratchOverlays, textStrips, exponents, fractionBars, fractionTexts };
   }
 
   // ===== PDF / JPEG encoding helpers ================================

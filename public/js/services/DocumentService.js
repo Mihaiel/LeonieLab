@@ -21,7 +21,9 @@ export class DocumentService {
       operationRanges:  doc.operationRanges  || [],
       textRows:         doc.textRows         || {},
       exponents:        doc.exponents        || {},
-      version: 6,
+      fractionBars:     doc.fractionBars     || [],
+      fractionTexts:    doc.fractionTexts    || [],
+      version: 8,
     };
     return JSON.stringify(payload);
   }
@@ -54,6 +56,10 @@ export class DocumentService {
       }
       // v6: unit exponents ({ "row:col": "2" }). Older files default to empty.
       doc.exponents = (data.exponents && typeof data.exponents === 'object') ? data.exponents : {};
+      // v7: fraction bars ([{ row, startCol, endCol }]). Older files default to empty.
+      doc.fractionBars = Array.isArray(data.fractionBars) ? data.fractionBars : [];
+      // v8: fraction operand text overlays ([{ row, startCol, endCol, text }]).
+      doc.fractionTexts = Array.isArray(data.fractionTexts) ? data.fractionTexts : [];
       return true;
     }catch{ return false; }
   }

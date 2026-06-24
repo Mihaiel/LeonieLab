@@ -20,6 +20,8 @@ export class Document {
     this.operationRanges = [];   // same shape as OperationManager.resultRanges
     this.textRows = {};          // { [rowIndex]: Array<{ text, startCol, endCol }> } — text strips per row
     this.exponents = {};         // { "row:col": "2" } — unit exponent superscripts (m², cm², mⁿ)
+    this.fractionBars = [];      // [{ row, startCol, endCol }] — Bruchrechnung horizontal bars (centered on row)
+    this.fractionTexts = [];     // [{ row, startCol, endCol, text }] — centered operand numerator/denominator overlays
   }
 
   inBounds(r, c) {
@@ -46,5 +48,7 @@ export class Document {
     this.operationRanges = [];
     this.textRows = {};
     this.exponents = {};
+    this.fractionBars = [];
+    this.fractionTexts = [];
   }
 }
