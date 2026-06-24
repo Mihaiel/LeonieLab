@@ -11,10 +11,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Settings system** — A new **⚙ Settings** toolbar button opens a native
   `<dialog>` modal for adjusting the worksheet. Configurable: grid **rows** and
-  **columns**, on-screen **cell size**, **digit font**, **carry/borrow (scratch)
-  font**, **unit-exponent font**, **text-strip font**, **carry/borrow text
-  color**, **unit-exponent text color**, a **sound feedback** on/off toggle, and
-  a **reduce-motion** toggle (disables the pulsing cursor + modal animation).
+  **columns**, on-screen **cell size**, **carry/borrow position** (which corner
+  of the operand cell the carry digit sits in), **digit font**, **carry/borrow
+  (scratch) font**, **unit-exponent font**, **text-strip font**, **carry/borrow
+  text color**, **unit-exponent text color**, a **sound feedback** on/off toggle,
+  and a **reduce-motion** toggle (disables the pulsing cursor + modal animation).
   Plus **Reset to defaults**. Implemented in a new `SettingsService`
   (`js/services/SettingsService.js`) that is the single source of truth, persists
   to its own `leonielab_settings` localStorage key (separate from the autosave),
@@ -173,8 +174,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   with operation formatting.
 
 - **Carry/borrow scratch overlays** — After an addition or subtraction block is
-  formatted, each digit cell of the top operand (A) shows a small placeholder in
-  its top-right corner for carry or borrow annotations. Press `ArrowUp` while the
+  formatted, each digit cell of the top operand (A) shows a small placeholder for
+  carry or borrow annotations — in the **bottom-right corner by default** (the
+  standard hand-written position), configurable to any corner via the Settings
+  dialog (`scratchPosition`, driven by `--scratch-top/bottom/left/right` CSS vars
+  and mirrored in PDF export). Press `ArrowUp` while the
   cursor is on any of those cells to enter scratch mode: type a single digit into
   the overlay, navigate between overlays with `ArrowLeft` / `ArrowRight` and
   return to the main row with `ArrowDown`, `Enter` or `Escape`. Backspace clears

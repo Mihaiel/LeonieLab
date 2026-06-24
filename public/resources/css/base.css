@@ -63,6 +63,13 @@
     --color-scratch: #bbb;                /* carry/borrow scratch text */
     --color-unit-exp: var(--color-text);  /* unit exponent text */
 
+    /* Carry/borrow scratch corner (anchor of .scratch-overlay) — default
+       bottom-right, overridable by SettingsService.scratchPosition. */
+    --scratch-top: auto;
+    --scratch-bottom: 2px;
+    --scratch-left: auto;
+    --scratch-right: 2px;
+
     --color-red: #ff3333;
     --color-red-hover: #e62e2e;
 

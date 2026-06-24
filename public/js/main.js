@@ -120,7 +120,7 @@ function setupWorksheet(){
   if (btnPrint) btnPrint.addEventListener('click', doPrint);
   // Save PDF instantly without print dialog
   if (btnSavePdf) btnSavePdf.addEventListener('click', async () => {
-    await pdf.saveInstant(doc, grid.cellSize);
+    await pdf.saveInstant(doc, grid.cellSize, settings.get().scratchPosition);
   });
 
   // Save/Open with DocumentService
@@ -171,6 +171,7 @@ function setupWorksheet(){
 
     const setRows = q('setRows'), setCols = q('setCols');
     const setColorScratch = q('setColorScratch'), setColorUnitExp = q('setColorUnitExp');
+    const setScratchPos = q('setScratchPos');
     const setAudio = q('setAudio'), setReduceMotion = q('setReduceMotion');
     const sizeNote = q('settingsSizeNote');
 
@@ -191,6 +192,7 @@ function setupWorksheet(){
       }
       if (setColorScratch) setColorScratch.value = s.colorScratch;
       if (setColorUnitExp) setColorUnitExp.value = s.colorUnitExp;
+      if (setScratchPos) setScratchPos.value = s.scratchPosition;
       if (setAudio) setAudio.checked = !!s.audioEnabled;
       if (setReduceMotion) setReduceMotion.checked = !!s.reduceMotion;
 
@@ -243,6 +245,7 @@ function setupWorksheet(){
         fsTextStrip:  Number(q('setFsTextStrip').value),
         colorScratch: setColorScratch.value,
         colorUnitExp: setColorUnitExp.value,
+        scratchPosition: setScratchPos ? setScratchPos.value : prev.scratchPosition,
         audioEnabled: setAudio.checked,
         reduceMotion: setReduceMotion.checked,
       };

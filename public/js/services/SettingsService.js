@@ -28,8 +28,18 @@ export const DEFAULTS = {
   fsTextStrip: 1.8,    // rem  → --fs-text-strip
   colorScratch: '#bbbbbb',   // → --color-scratch  (carry/borrow resting text)
   colorUnitExp: '#464646',   // → --color-unit-exp (matches --color-text)
+  scratchPosition: 'bottom-right',  // corner of the A-cell for carry/borrow digits
   audioEnabled: true,
   reduceMotion: false,
+};
+
+// Allowed carry/borrow corners → the CSS top/bottom/left/right anchor values
+// applied to .scratch-overlay (and mirrored by the PDF exporter).
+export const SCRATCH_POSITIONS = {
+  'top-left':     { top: '2px',  bottom: 'auto', left: '2px',  right: 'auto' },
+  'top-right':    { top: '2px',  bottom: 'auto', left: 'auto', right: '2px'  },
+  'bottom-left':  { top: 'auto', bottom: '2px',  left: '2px',  right: 'auto' },
+  'bottom-right': { top: 'auto', bottom: '2px',  left: 'auto', right: '2px'  },
 };
 
 // Numeric clamp ranges + slider step. Drives both load-time clamping and the
@@ -72,6 +82,8 @@ export class SettingsService {
       }
     } catch (_) { /* corrupt / unavailable → defaults */ }
     for (const key of Object.keys(LIMITS)) merged[key] = this._clamp(key, merged[key]);
+    // Sanitize the enum-valued setting.
+    if (!(merged.scratchPosition in SCRATCH_POSITIONS)) merged.scratchPosition = DEFAULTS.scratchPosition;
     return merged;
   }
 
@@ -109,6 +121,12 @@ export class SettingsService {
     root.style.setProperty('--fs-text-strip',      `${s.fsTextStrip}rem`);
     root.style.setProperty('--color-scratch',      s.colorScratch);
     root.style.setProperty('--color-unit-exp',     s.colorUnitExp);
+    // Carry/borrow corner → the four position anchors on .scratch-overlay.
+    const pos = SCRATCH_POSITIONS[s.scratchPosition] || SCRATCH_POSITIONS[DEFAULTS.scratchPosition];
+    root.style.setProperty('--scratch-top',    pos.top);
+    root.style.setProperty('--scratch-bottom', pos.bottom);
+    root.style.setProperty('--scratch-left',   pos.left);
+    root.style.setProperty('--scratch-right',  pos.right);
     root.classList.toggle('reduce-motion', !!s.reduceMotion);
   }
 
